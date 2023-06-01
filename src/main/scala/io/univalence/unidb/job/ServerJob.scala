@@ -53,21 +53,21 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
     command match
       case StoreCommand.Put(storeName, key, value) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           store      <- storeSpace.getStore(storeName.store)
           _          <- store.put(key, value)
         } yield ujson.Null
 
       case StoreCommand.Get(storeName, key) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           store      <- storeSpace.getStore(storeName.store)
           result     <- store.get(key)
         } yield result
 
       case StoreCommand.GetFrom(storeName, key, _) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           store      <- storeSpace.getStore(storeName.store)
           iter       <- store.getFrom(key)
         } yield ujson.Arr.from(
@@ -82,14 +82,14 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
 
       case StoreCommand.Delete(storeName, key) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           store      <- storeSpace.getStore(storeName.store)
           _          <- store.delete(key)
         } yield ujson.Null
 
       case StoreCommand.GetWithPrefix(storeName, prefix, _) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           store      <- storeSpace.getStore(storeName.store)
           iter       <- store.getPrefix(prefix)
         } yield ujson.Arr.from(
@@ -104,7 +104,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
 
       case StoreCommand.GetAll(storeName, _) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           store      <- storeSpace.getStore(storeName.store)
           iter       <- store.scan()
         } yield ujson.Arr.from(
@@ -119,25 +119,25 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
 
       case StoreCommand.CreateStore(storeName) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           _          <- storeSpace.createStore(storeName.store)
         } yield ujson.Null
 
       case StoreCommand.GetStore(storeName) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           _          <- storeSpace.getStore(storeName.store)
         } yield ujson.Null
 
       case StoreCommand.GetOrCreateStore(storeName) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           _          <- storeSpace.getOrCreateStore(storeName.store)
         } yield ujson.Null
 
       case StoreCommand.DropStore(storeName) =>
         for {
-          storeSpace <- StoreSpaceManagerService.get(storeName.storeSpace)
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           _          <- storeSpace.dropStore(storeName.store)
         } yield ujson.Null
 

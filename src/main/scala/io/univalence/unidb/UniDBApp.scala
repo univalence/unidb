@@ -2,18 +2,15 @@ package io.univalence.unidb
 
 import org.jline.reader.{EndOfFileException, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
-
 import io.univalence.unidb.arg.{ApplicationOption, ArgParser}
 import io.univalence.unidb.command.*
 import io.univalence.unidb.command.CommandIssue.Empty
-import io.univalence.unidb.job.{CliJob, LoadJob, ServerJob, WebJob}
-
+import io.univalence.unidb.job.{CliJob, DumpJob, LoadJob, ServerJob, WebJob}
 import zio.*
 import zio.stream.*
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try, Using}
-
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
@@ -73,7 +70,7 @@ object UniDBApp extends ZIOAppDefault {
                 LoadJob(defaultStoreDir, defaultKeyDelimiter).run(o)
 
               case o: arg.ApplicationOption.DumpOption =>
-                dumpJob(o)
+                DumpJob(defaultStoreDir).run(o)
         } yield ()
       ).foldZIO(
         {
@@ -102,23 +99,7 @@ object UniDBApp extends ZIOAppDefault {
       ZIO.fromAutoCloseable(ZIO.succeed(terminal))
     }
   }
-
-  def dumpJob(option: arg.ApplicationOption.DumpOption): Task[Unit] =
-    val storeDir = option.storeDir.getOrElse(defaultStoreDir)
-
-    (for {
-      storeSpace <- StoreSpaceManagerService.get("db")
-      store      <- storeSpace.getStore("table")
-      data       <- store.scan()
-      _ <-
-        ZStream
-          .fromIterator(data)
-          .run(ZSink.foreach(record => zio.Console.printLine(s"$record")))
-    } yield ()).provide(
-      StoreSpaceManagerService
-        .layer(storeDir)
-    )
-
+  
   enum RunningMode {
     case CLI, SERVER, LOAD, DUMP
   }

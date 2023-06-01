@@ -64,27 +64,32 @@ class PersistentStoreSpace private[db] (name: String, storeSpaceDir: Path, store
 }
 
 object PersistentStoreSpace {
-  def apply(name: String, baseDir: Path): Try[PersistentStoreSpace] =
+  def apply(name: String, baseDir: Path, shouldCreate: Boolean = true): Try[PersistentStoreSpace] =
     if (!baseDir.toFile.exists())
       Failure(new NoSuchFileException(s"store space=$name: base directory not found: $baseDir"))
     else
       val storeSpaceDir = baseDir.resolve(name)
-      if (!storeSpaceDir.toFile.exists())
-        Files.createDirectories(storeSpaceDir)
+      if (!shouldCreate && !storeSpaceDir.toFile.exists()) {
+        Failure(new NoSuchFileException(s"store space=$name: not found in base directory not found: $baseDir"))
+      } else {
+        if (!storeSpaceDir.toFile.exists()) {
+          Files.createDirectories(storeSpaceDir)
+        }
 
-      val storePaths: Map[String, Path] =
-        storeSpaceDir.toFile
-          .listFiles()
-          .toList
-          .filter(f => f.isFile)
-          .map { file =>
-            val storeName = file.getName
+        val storePaths: Map[String, Path] =
+          storeSpaceDir.toFile
+            .listFiles()
+            .toList
+            .filter(f => f.isFile)
+            .map { file =>
+              val storeName = file.getName
 
-            storeName -> file.toPath
-          }
-          .toMap
+              storeName -> file.toPath
+            }
+            .toMap
 
-      Success(new PersistentStoreSpace(name, storeSpaceDir, storePaths))
+        Success(new PersistentStoreSpace(name, storeSpaceDir, storePaths))
+      }
 }
 
 class PersistentStore private[db] (val name: String, val file: Path, storeSpace: PersistentStoreSpace) extends Store {

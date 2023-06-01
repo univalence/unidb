@@ -13,14 +13,15 @@ enum ApplicationOption {
       port:     Option[Int]
   )
   case LoadOption(
-      storeDir: Option[Path],
-      fromFile: Path,
+      storeDir:  Option[Path],
+      fromFile:  Path,
       keyFields: List[String],
-      keyDelim: Option[String],
-      store: StoreName
+      keyDelim:  Option[String],
+      toStore:   StoreName
   )
   case DumpOption(
-      storeDir: Option[Path]
+      storeDir:  Option[Path],
+      fromStore: StoreName
   )
   case WebOption(
       storeDir: Option[Path],

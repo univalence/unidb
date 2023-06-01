@@ -66,7 +66,7 @@ object UniInterpreter {
   class InterpreterLive(manager: StoreSpaceManagerService, console: UniDBConsole.Console) extends Interpreter {
     override def get(storeName: StoreName, key: String): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         value      <- store.get(key)
         _          <- console.response(s"$key -> ${value.toString}")
@@ -74,26 +74,26 @@ object UniInterpreter {
 
     override def put(storeName: StoreName, key: String, value: ujson.Value): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         _          <- store.put(key, value)
       } yield RunningState.Continue
 
     override def delete(storeName: StoreName, key: String): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         _          <- store.delete(key)
       } yield RunningState.Continue
 
     override def getFrom(storeName: StoreName, prefix: String, limit: Option[Int]): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         records    <- limit.fold(store.getFrom(prefix))(l => store.getFrom(prefix).map(_.take(l)))
         recordList = records.toList
         _ <-
-          ZIO.foreach(recordList) { record =>
+          ZIO.foreachDiscard(recordList) { record =>
             console.response(s"${record.key} -> ${record.value.toString}")
           }
         _ <-
@@ -106,12 +106,12 @@ object UniInterpreter {
 
     override def getWithPrefix(storeName: StoreName, prefix: String, limit: Option[Int]): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         records    <- limit.fold(store.getPrefix(prefix))(l => store.getPrefix(prefix).map(_.take(l)))
         recordList = records.toList
         _ <-
-          ZIO.foreach(recordList) { record =>
+          ZIO.foreachDiscard(recordList) { record =>
             console.response(s"${record.key} -> ${record.value.toString}")
           }
         _ <-
@@ -124,12 +124,12 @@ object UniInterpreter {
 
     override def getAll(storeName: StoreName, limit: Option[Int]): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         records    <- limit.fold(store.scan())(l => store.scan().map(_.take(l)))
         recordList = records.toList
         _ <-
-          ZIO.foreach(recordList) { record =>
+          ZIO.foreachDiscard(recordList) { record =>
             console.response(s"${record.key} -> ${record.value.toString}")
           }
         _ <-
@@ -142,25 +142,25 @@ object UniInterpreter {
 
     override def createStore(storeName: StoreName): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         _          <- storeSpace.createStore(storeName.store)
       } yield RunningState.Continue
 
     override def getStore(storeName: StoreName): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         _          <- storeSpace.getStore(storeName.store)
       } yield RunningState.Continue
 
     override def getOrCreateStore(storeName: StoreName): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         _          <- storeSpace.getOrCreateStore(storeName.store)
       } yield RunningState.Continue
 
     override def dropStore(storeName: StoreName): Task[RunningState] =
       for {
-        storeSpace <- manager.get(storeName.storeSpace)
+        storeSpace <- manager.getPersistent(storeName.storeSpace)
         _          <- storeSpace.dropStore(storeName.store)
       } yield RunningState.Continue
 

@@ -9,9 +9,12 @@ class StoreSpaceManager(baseDir: Path) extends AutoCloseable {
   // TODO manage closed store spaces
   val storeSpaces: mutable.Map[String, StoreSpace] = mutable.Map.empty
 
-  def get(name: String): Try[StoreSpace] =
+  def getPersistent(name: String): Try[StoreSpace] =
     if (!storeSpaces.contains(name))
-      Failure(new IllegalAccessException(s"store space $name does not exist"))
+      for {
+        storeSpace <- PersistentStoreSpace(name, baseDir, shouldCreate = false)
+        _          <- Try(storeSpaces.update(name, storeSpace))
+      } yield storeSpace
     else
       Success(storeSpaces(name))
 

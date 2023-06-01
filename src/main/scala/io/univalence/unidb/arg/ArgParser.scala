@@ -75,13 +75,13 @@ object ArgParser {
     Parser
       .allOf(
         storeDirParameterParser,
-        pathParser.map(v => fileParameter -> v),
+        pathParser.map(v => fromParameter -> v),
         keyFieldsParameterParser,
         keyDelimParameterParser,
-        storeParameterParser
+        toStoreParameterParser
       )
       .flatMap { parameters =>
-        val missingParameters = Set(fileParameter, keyFieldsParameter, storeParameter).diff(parameters.keySet)
+        val missingParameters = Set(fromParameter, keyFieldsParameter, toParameter).diff(parameters.keySet)
 
         if (missingParameters.nonEmpty)
           Parser.fail(s"those parameters are missing: " + missingParameters.mkString(", "))
@@ -89,26 +89,37 @@ object ArgParser {
           Parser(
             ApplicationOption.LoadOption(
               storeDir  = parameters.get(storeDirParameter).map(_.asInstanceOf[Path]),
-              fromFile  = parameters(fileParameter).asInstanceOf[Path],
+              fromFile  = parameters(fromParameter).asInstanceOf[Path],
               keyFields = parameters(keyFieldsParameter).asInstanceOf[List[String]],
               keyDelim  = parameters.get(keyDelimParameter).map(_.asInstanceOf[String]),
-              store     = parameters(storeParameter).asInstanceOf[StoreName]
+              store     = parameters(toParameter).asInstanceOf[StoreName]
             )
           )
       }
 
   lazy val dumpArgParser: ListStringParser[ApplicationOption.DumpOption] =
-    storeDirParameterParser.optional.map(path =>
-      ApplicationOption.DumpOption(
-        storeDir = path.map(_._2)
+    Parser
+      .allOf(
+        storeDirParameterParser,
+        fromStoreParameterParser
       )
-    )
+      .map { parameters =>
+        if (!parameters.contains(fromParameter))
+          Parser.fail("this parameter is missing: " + fromParameter)
+        else
+          Parser(
+            ApplicationOption.DumpOption(
+              storeDir  = parameters(storeDirParameter),
+              fromStore = parameters(fromParameter)
+            )
+          )
+      }
 
   val storeDirParameter  = "store-dir"
   val portParameter      = "port"
   val hostParameter      = "server"
-  val fileParameter      = "from"
-  val storeParameter     = "to"
+  val fromParameter      = "from"
+  val toParameter        = "to"
   val keyFieldsParameter = "keys"
   val keyDelimParameter  = "key-delim"
 
@@ -137,10 +148,15 @@ object ArgParser {
       .`then`(regexParser(".+".r))
       .map(v => keyDelimParameter -> v)
 
-  lazy val storeParameterParser: Parser[String, (String, StoreName)] =
-    parameterNameParser(storeParameter)
+  lazy val toStoreParameterParser: Parser[String, (String, StoreName)] =
+    parameterNameParser(toParameter)
       .`then`(storeParser)
-      .map(v => storeParameter -> v)
+      .map(v => toParameter -> v)
+
+  lazy val fromStoreParameterParser: Parser[String, (String, StoreName)] =
+    parameterNameParser(fromParameter)
+      .`then`(storeParser)
+      .map(v => fromParameter -> v)
 
   val valueRe: Regex = "[\\d\\w-_.]+".r
   val pathRe: Regex  = "/?([\\d\\w-_.]+/)*[\\d\\w-_.]+".r

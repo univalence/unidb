@@ -9,14 +9,14 @@ import zio.*
 import java.nio.file.Path
 
 trait StoreSpaceManagerService {
-  def get(name: String): Task[ZStoreSpace]
+  def getPersistent(name: String): Task[ZStoreSpace]
   def getOrCreateInMemory(name: String): Task[ZStoreSpace]
   def getOrCreatePersistent(name: String): Task[ZStoreSpace]
   def getOrOpenRemote(name: String, host: String, port: Int): Task[ZStoreSpace]
 }
 object StoreSpaceManagerService {
-  def get(name: String): RIO[StoreSpaceManagerService, ZStoreSpace] =
-    ZIO.serviceWithZIO[StoreSpaceManagerService](_.get(name))
+  def getPersistent(name: String): RIO[StoreSpaceManagerService, ZStoreSpace] =
+    ZIO.serviceWithZIO[StoreSpaceManagerService](_.getPersistent(name))
   def getOrCreateInMemory(name: String): RIO[StoreSpaceManagerService, ZStoreSpace] =
     ZIO.serviceWithZIO[StoreSpaceManagerService](_.getOrCreateInMemory(name))
   def getOrCreatePersistent(name: String): RIO[StoreSpaceManagerService, ZStoreSpace] =
@@ -32,7 +32,8 @@ object StoreSpaceManagerService {
 class StoreSpaceManagerServiceLive(baseDir: Path) extends StoreSpaceManagerService with AutoCloseable {
   val manager = new StoreSpaceManager(baseDir)
 
-  override def get(name: String): Task[ZStoreSpace] = ZIO.fromTry(manager.get(name)).map(ZStoreSpace.apply)
+  override def getPersistent(name: String): Task[ZStoreSpace] =
+    ZIO.fromTry(manager.getPersistent(name)).map(ZStoreSpace.apply)
 
   override def getOrCreateInMemory(name: String): Task[ZStoreSpace] =
     ZIO.fromTry(manager.getOrCreateInMemory(name)).map(ZStoreSpace.apply)
