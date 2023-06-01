@@ -52,17 +52,3 @@ case class LoadJob(defaultStoreDir: Path, defaultKeyDelim: String) extends Job[A
       } yield ())
     }.provide(StoreSpaceManagerService.layer(storeDir))
 }
-
-object LoadRunMain extends ZIOAppDefault {
-  override def run: ZIO[Any, Any, Any] = {
-    val option: ApplicationOption.LoadOption =
-      ApplicationOption.LoadOption(
-        storeDir  = None,
-        fromFile  = Paths.get("data/target/orders.csv"),
-        keyFields = List("client", "id", "timestamp"),
-        keyDelim  = None,
-        store     = StoreName("cafet", "orders-by-product")
-      )
-    LoadJob(Paths.get("data", "target"), "/").run(option)
-  }
-}
