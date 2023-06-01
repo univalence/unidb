@@ -105,12 +105,12 @@ object ArgParser {
     )
 
   val storeDirParameter  = "store-dir"
-  val fileParameter      = "file"
   val portParameter      = "port"
   val hostParameter      = "server"
-  val keyFieldsParameter = "key-fields"
+  val fileParameter      = "from"
+  val storeParameter     = "to"
+  val keyFieldsParameter = "keys"
   val keyDelimParameter  = "key-delim"
-  val storeParameter     = "store"
 
   lazy val storeDirParameterParser: Parser[String, (String, Path)] =
     parameterNameParser(storeDirParameter)
