@@ -291,6 +291,11 @@ object CommandParser {
           .flatMap { optionName =>
             if (optionName == ShowCommandName.STORESPACES.toString)
               Parser(ShowCommand.StoreSpaces)
+            else if (optionName == ShowCommandName.STORES.toString)
+              for {
+                _          <- Parser.skipSpaces
+                storeSpace <- identifier
+              } yield ShowCommand.Stores(storeSpace)
             else
               Parser.fail(s"unknown SHOW option $optionName")
           }

@@ -58,7 +58,7 @@ class PersistentStoreSpace private[db] (name: String, storeSpaceDir: Path, store
         )
       )
 
-  def getAll: Try[Iterator[String]] = Try(stores.view.keys.iterator)
+  override def getAllStores: Try[Iterator[String]] = Try(stores.view.keys.iterator)
 
   override def close(): Unit = ()
 }

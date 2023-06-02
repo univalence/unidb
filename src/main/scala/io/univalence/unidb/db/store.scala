@@ -7,6 +7,7 @@ trait StoreSpace(val name: String) extends AutoCloseable {
   def getStore(name: String): Try[Store]
   def getOrCreateStore(name: String): Try[Store]
   def drop(name: String): Try[Unit]
+  def getAllStores: Try[Iterator[String]]
 }
 
 trait Store {

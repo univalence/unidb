@@ -47,7 +47,7 @@ class StoreSpaceManagerServiceLive(baseDir: Path) extends StoreSpaceManagerServi
   override def getOrOpenRemote(name: String, host: String, port: RuntimeFlags): Task[ZStoreSpace] =
     ZIO.fromTry(manager.getOrOpenRemote(name, host, port)).map(ZStoreSpace.apply)
 
-  override def getAllSpaces: Task[Iterator[String]] = ZIO.fromTry(manager.getAllNames)
+  override def getAllSpaces: Task[Iterator[String]] = ZIO.fromTry(manager.getAllSpaces)
 
   override def close(): Unit = manager.close()
 }
@@ -57,6 +57,7 @@ case class ZStoreSpace(storeSpace: StoreSpace) {
   def getStore(name: String): Task[ZStore]         = ZIO.fromTry(storeSpace.getStore(name)).map(ZStore.apply)
   def getOrCreateStore(name: String): Task[ZStore] = ZIO.fromTry(storeSpace.getOrCreateStore(name)).map(ZStore.apply)
   def dropStore(name: String): Task[Unit]          = ZIO.fromTry(storeSpace.drop(name))
+  def getAllStores: Task[Iterator[String]]         = ZIO.fromTry(storeSpace.getAllStores)
 }
 
 case class ZStore(store: Store) {

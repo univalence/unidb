@@ -50,6 +50,8 @@ class InMemoryStoreSpace(name: String) extends StoreSpace(name) { storeSpace =>
         )
       )
 
+  override def getAllStores: Try[Iterator[String]] = Try(stores.view.keys.iterator)
+  
   override def close(): Unit = ()
 
 }

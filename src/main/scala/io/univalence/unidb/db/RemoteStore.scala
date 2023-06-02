@@ -83,6 +83,8 @@ class RemoteStoreSpace private[db] (name: String, socket: SocketChannel) extends
           Success(())
     } yield ()
 
+  override def getAllStores: Try[Iterator[String]] = Try(stores.view.keys.iterator)
+
   override def close(): Unit = sendClose().get
 
   private[db] def send(request: String): Try[ujson.Value] =

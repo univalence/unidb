@@ -17,7 +17,7 @@ enum StoreCommand(val name: StoreCommandName) {
   case GetAll(store: StoreName, limit: Option[Int]) extends StoreCommand(StoreCommandName.GETALL)
 
   def serialize: String =
-    this match
+    this match {
       case Put(store, key, value) => s"${this.name} ${store.serialize} $key $value"
       case Get(store, key)        => s"${this.name} ${store.serialize} $key"
       case Delete(store, key)     => s"${this.name} ${store.serialize} $key"
@@ -27,6 +27,7 @@ enum StoreCommand(val name: StoreCommandName) {
         s"${this.name} ${store.serialize} $key${limit.map(n => s" LIMIT $n").getOrElse("")}"
       case GetAll(store, limit) =>
         s"${this.name} ${store.serialize}${limit.map(n => s" LIMIT $n").getOrElse("")}"
+    }
 }
 enum StoreSpaceCommand(val name: StoreSpaceCommandName) {
   case OpenStoreSpace(storeSpaceName: String, storeSpaceType: StoreType)
@@ -46,6 +47,7 @@ enum StoreSpaceCommand(val name: StoreSpaceCommandName) {
 }
 enum ShowCommand {
   case StoreSpaces
+  case Stores(storeSpace: String)
 }
 enum CLICommand {
   case Quit
@@ -90,6 +92,7 @@ enum StoreSpaceCommandName {
 
 enum ShowCommandName {
   case STORESPACES
+  case STORES
 }
 
 enum CLICommandName {

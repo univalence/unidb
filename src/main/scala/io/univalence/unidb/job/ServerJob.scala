@@ -160,6 +160,13 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
           json   <- ZIO.attempt(ujson.Arr.from(result.map(r => ujson.Str(r))))
         } yield json
 
+      case ShowCommand.Stores(storeSpaceName) =>
+        for {
+          storeSpace <- StoreSpaceManagerService.getPersistent(storeSpaceName)
+          result     <- storeSpace.getAllStores
+          json       <- ZIO.attempt(ujson.Arr.from(result.map(r => ujson.Str(r))))
+        } yield json
+
   def serve(data: String): RIO[StoreSpaceManagerService, ServerResponse] = {
     val serveStep: ZIO[StoreSpaceManagerService, CommandIssue, Value] =
       for {
