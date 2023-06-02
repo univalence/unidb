@@ -21,7 +21,7 @@ import java.nio.file.{Files, NoSuchFileException, Paths}
 
 object UniDBApp extends ZIOAppDefault {
 
-  val defaultStoreDir     = Paths.get("/tmp", "unidb", "data")
+  val defaultStoreDir     = Paths.get(sys.props("java.io.tmpdir"), "unidb", "data")
   val defaultKeyDelimiter = "#"
   val defaultPort         = 19040
   val defaultWebPort      = 18040
