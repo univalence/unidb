@@ -1,10 +1,12 @@
 package io.univalence.unidb
 
 import io.univalence.unidb.command.StoreType
-import io.univalence.unidb.db.StoreName
+import io.univalence.unidb.db.{Record, StoreName}
 import io.univalence.unidb.job.RunningState
 
 import zio.*
+
+import scala.io.AnsiColor
 
 object UniInterpreter {
 
@@ -77,7 +79,7 @@ object UniInterpreter {
         storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         value      <- store.get(key)
-        _          <- console.response(s"$key -> ${value.toString}")
+        _          <- printRecords(List(Record(key, value, 0L, false)))
       } yield RunningState.Continue
 
     override def put(storeName: StoreName, key: String, value: ujson.Value): Task[RunningState] =
@@ -99,17 +101,7 @@ object UniInterpreter {
         storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         records    <- limit.fold(store.getFrom(prefix))(l => store.getFrom(prefix).map(_.take(l)))
-        recordList = records.toList
-        _ <-
-          ZIO.foreachDiscard(recordList) { record =>
-            console.response(s"${record.key} -> ${record.value.toString}")
-          }
-        _ <-
-          console.response(
-            if (recordList.isEmpty) "No records"
-            else if (recordList.size == 1) "1 record"
-            else s"${recordList.size} records"
-          )
+        _          <- printRecords(records.toList)
       } yield RunningState.Continue
 
     override def getWithPrefix(storeName: StoreName, prefix: String, limit: Option[Int]): Task[RunningState] =
@@ -117,17 +109,7 @@ object UniInterpreter {
         storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         records    <- limit.fold(store.getPrefix(prefix))(l => store.getPrefix(prefix).map(_.take(l)))
-        recordList = records.toList
-        _ <-
-          ZIO.foreachDiscard(recordList) { record =>
-            console.response(s"${record.key} -> ${record.value.toString}")
-          }
-        _ <-
-          console.response(
-            if (recordList.isEmpty) "No records"
-            else if (recordList.size == 1) "1 record"
-            else s"${recordList.size} records"
-          )
+        _          <- printRecords(records.toList)
       } yield RunningState.Continue
 
     override def getAll(storeName: StoreName, limit: Option[Int]): Task[RunningState] =
@@ -135,17 +117,7 @@ object UniInterpreter {
         storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
         records    <- limit.fold(store.scan())(l => store.scan().map(_.take(l)))
-        recordList = records.toList
-        _ <-
-          ZIO.foreachDiscard(recordList) { record =>
-            console.response(s"${record.key} -> ${record.value.toString}")
-          }
-        _ <-
-          console.response(
-            if (recordList.isEmpty) "No records"
-            else if (recordList.size == 1) "1 record"
-            else s"${recordList.size} records"
-          )
+        _          <- printRecords(records.toList)
       } yield RunningState.Continue
 
     override def createStore(storeName: StoreName): Task[RunningState] =
@@ -198,6 +170,34 @@ object UniInterpreter {
         _          <- ZIO.foreachDiscard(names.toList)(name => console.response(name))
       } yield RunningState.Continue
 
+    private def printRecords(records: List[Record]): Task[Unit] =
+      val (maxkl, maxvl) =
+        records
+          .map(r => (r.key.length, r.value.toString.length))
+          .foldLeft((0, 0)) { case ((maxkl, maxvl), (kl, vl)) =>
+            (Math.max(maxkl, kl), Math.max(maxvl, vl))
+          }
+
+      for {
+        _ <-
+          console.response(
+            AnsiColor.BOLD
+              + "key".padTo(maxkl, ' ')
+              + " | value"
+              + AnsiColor.RESET
+          )
+        _ <- console.response(("-" * maxkl) + "-|-" + ("-" * maxvl))
+        _ <-
+          ZIO.foreachDiscard(records) { record =>
+            console.response(record.key.padTo(maxkl, ' ') + " | " + record.value.toString)
+          }
+        recordCount =
+          if (records.isEmpty) "No record"
+          else if (records.size == 1) "1 record"
+          else s"${records.size} records"
+        _ <- console.response(AnsiColor.BOLD + recordCount + AnsiColor.RESET)
+      } yield ()
+
   }
 
   val layer: ZLayer[UniDBConsole.Console & StoreSpaceManagerService, Throwable, Interpreter] =
@@ -207,4 +207,5 @@ object UniInterpreter {
         manager <- ZIO.service[StoreSpaceManagerService]
       } yield new InterpreterLive(manager, console)
     )
+
 }
