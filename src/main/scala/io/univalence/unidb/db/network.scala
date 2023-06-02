@@ -26,8 +26,7 @@ object network {
       else if (byteRead < bufferSize) {
         readBuffer.rewind()
         data + new String(readBuffer.array(), readBuffer.arrayOffset(), byteRead)
-      }
-      else {
+      } else {
         readBuffer.rewind()
         receiveLoop(data + new String(readBuffer.array(), readBuffer.arrayOffset(), byteRead))
       }
