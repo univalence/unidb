@@ -26,12 +26,13 @@ object bytearray {
     }
   }
 
-  extension (bytes: ByteArray)
+  extension (bytes: ByteArray) {
     def toArray: Array[Byte]                   = bytes
     def toBuffer: ByteBuffer                   = ByteBuffer.wrap(bytes)
     def toInt: Int                             = ByteBuffer.wrap(bytes).getInt(0)
     def toLong: Long                           = ByteBuffer.wrap(bytes).getLong(0)
     def append(other: ByteArray): ByteArray    = bytes ++ other
     def subPart(from: Int, to: Int): ByteArray = bytes.slice(from, to)
+  }
 
 }

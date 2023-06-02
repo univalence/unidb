@@ -105,7 +105,7 @@ object RemoteStoreSpace {
 
   import tryext.*
 
-  def apply(name: String, socket: SocketChannel): Try[RemoteStoreSpace] =
+  def apply(name: String, socket: SocketChannel): Try[RemoteStoreSpace] = {
     def openRemote(remote: RemoteStoreSpace): Try[Unit] =
       for {
         data     <- remote.send(StoreSpaceCommand.OpenStoreSpace(name, StoreType.Persistent).serialize)
@@ -138,6 +138,7 @@ object RemoteStoreSpace {
       stores <- getAllStores(remote)
       _      <- stores.map(remote.register).sequence
     } yield remote
+  }
 
 }
 

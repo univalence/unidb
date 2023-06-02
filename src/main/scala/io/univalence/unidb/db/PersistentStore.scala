@@ -21,11 +21,12 @@ class PersistentStoreSpace private[db] (name: String, storeSpaceDir: Path, store
           s"store space=${storeSpace.name}: store $name already exists"
         )
       )
-    else
+    else {
       val store = new PersistentStore(name, storeSpaceDir.resolve(name), storeSpace)
       stores.update(name, store)
 
       Success(store)
+    }
 
   override def getStore(name: String): Try[Store] =
     if (stores.contains(name))
@@ -39,11 +40,12 @@ class PersistentStoreSpace private[db] (name: String, storeSpaceDir: Path, store
 
   override def getOrCreateStore(name: String): Try[Store] =
     if (stores.contains(name)) Success(stores(name))
-    else
+    else {
       val store = new PersistentStore(name, storeSpaceDir.resolve(name), storeSpace)
       stores.update(name, store)
 
       Success(store)
+    }
 
   override def drop(name: String): Try[Unit] =
     if (stores.contains(name))
@@ -60,9 +62,10 @@ class PersistentStoreSpace private[db] (name: String, storeSpaceDir: Path, store
 
   override def getAllStores: Try[Iterator[String]] = Try(stores.view.keys.iterator)
 
-  override def close(): Unit =
+  override def close(): Unit = {
     stores.foreach(store => store._2.close())
     stores.clear()
+  }
 
 }
 
@@ -70,7 +73,7 @@ object PersistentStoreSpace {
   def apply(name: String, baseDir: Path, shouldCreate: Boolean = true): Try[PersistentStoreSpace] =
     if (!baseDir.toFile.exists())
       Failure(new NoSuchFileException(s"store space=$name: base directory not found: $baseDir"))
-    else
+    else {
       val storeSpaceDir = baseDir.resolve(name)
       if (!shouldCreate && !storeSpaceDir.toFile.exists()) {
         Failure(new NoSuchFileException(s"store space=$name: not found in base directory not found: $baseDir"))
@@ -93,6 +96,7 @@ object PersistentStoreSpace {
 
         Success(new PersistentStoreSpace(name, storeSpaceDir, storePaths))
       }
+    }
 }
 
 class PersistentStore private[db] (val name: String, val file: Path, storeSpace: PersistentStoreSpace)
@@ -109,13 +113,14 @@ class PersistentStore private[db] (val name: String, val file: Path, storeSpace:
           .map(r => r.key -> Record(r.key, r.value, r.timestamp, r.deleted))
       )
 
-  override def put(key: String, value: Value): Try[Unit] =
+  override def put(key: String, value: Value): Try[Unit] = {
     val timestamp = Instant.now().toEpochMilli
     val record    = CLRecord(key, value, timestamp, false)
     for {
       _ <- commitLog.add(record)
       _ <- Try(data.update(key, Record(key, value, timestamp, false)))
     } yield ()
+  }
 
   override def delete(key: String): Try[Unit] =
     if (data.contains(key))

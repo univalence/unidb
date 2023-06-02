@@ -41,7 +41,7 @@ class StoreSpaceManager(baseDir: Path) {
         _          <- Try(storeSpaces.update(name, storeSpace))
       } yield storeSpace
 
-  def getOrOpenRemote(name: String, host: String, port: Int): Try[StoreSpace] =
+  def getOrOpenRemote(name: String, host: String, port: Int): Try[StoreSpace] = {
     def getOrOpenSocket(host: String, port: Int) =
       if (!sockets.contains((host, port)))
         for {
@@ -74,6 +74,7 @@ class StoreSpaceManager(baseDir: Path) {
         connections.update(name, (host, port))
         storeSpace
       }
+  }
 
   def getAllSpaces: Try[Iterator[String]] = Try(storeSpaces.view.keys.iterator)
 
@@ -116,7 +117,7 @@ class StoreSpaceManager(baseDir: Path) {
         }
     } yield ()
 
-  def close(): Unit =
+  def close(): Unit = {
     for (socket <- sockets.view.values) {
       sendClose(socket).get
       socket.close()
@@ -126,4 +127,5 @@ class StoreSpaceManager(baseDir: Path) {
     remotes.clear()
     connections.clear()
     storeSpaces.clear()
+  }
 }

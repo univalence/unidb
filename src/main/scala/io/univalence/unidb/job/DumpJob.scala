@@ -8,7 +8,7 @@ import zio.stream.*
 import java.nio.file.Path
 
 case class DumpJob(defaultStoreDir: Path) extends Job[Any, ApplicationOption.DumpOption] {
-  override def run(option: ApplicationOption.DumpOption): RIO[Any, Unit] =
+  override def run(option: ApplicationOption.DumpOption): RIO[Any, Unit] = {
     val storeDir  = option.storeDir.getOrElse(defaultStoreDir)
     val storeName = option.fromStore
 
@@ -23,5 +23,6 @@ case class DumpJob(defaultStoreDir: Path) extends Job[Any, ApplicationOption.Dum
             .run(ZSink.foreach(record => zio.Console.printLine(s"$record")))
       } yield ()).provide(StoreSpaceManagerService.layer(storeDir))
     }
+  }
 
 }

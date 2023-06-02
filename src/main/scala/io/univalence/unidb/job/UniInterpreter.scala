@@ -151,7 +151,7 @@ object UniInterpreter {
         _          <- storeSpace.dropStore(storeName.store)
       } yield RunningState.Continue
 
-    override def openStoreSpace(name: String, storeSpaceType: StoreType): Task[RunningState] =
+    override def openStoreSpace(name: String, storeSpaceType: StoreType): Task[RunningState] = {
       val result =
         storeSpaceType match {
           case StoreType.InMemory =>
@@ -163,6 +163,7 @@ object UniInterpreter {
         }
 
       result *> RunningState.ContinueM
+    }
 
     override def closeStoreSpace(name: String): Task[RunningState] =
       manager.closeStoreSpace(name) *> RunningState.ContinueM
@@ -180,7 +181,7 @@ object UniInterpreter {
         _          <- ZIO.foreachDiscard(names.toList)(name => console.response(name))
       } yield RunningState.Continue
 
-    private def printRecords(records: List[Record]): Task[Unit] =
+    private def printRecords(records: List[Record]): Task[Unit] = {
       val (maxkl, maxvl) =
         (
           records
@@ -210,6 +211,7 @@ object UniInterpreter {
           else s"${records.size} records"
         _ <- console.response(AnsiColor.BOLD + recordCount + AnsiColor.RESET)
       } yield ()
+    }
 
     override def close(): Task[Unit] = manager.close()
 

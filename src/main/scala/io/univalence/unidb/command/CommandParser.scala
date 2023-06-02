@@ -30,7 +30,7 @@ object CommandParser {
         Left(CommandIssue.SyntaxError(reason, input.data.mkString, input.offset))
     }
 
-  lazy val cliParser: StringParser[StoreCommand | StoreSpaceCommand | ShowCommand | CLICommand] =
+  lazy val cliParser: StringParser[StoreCommand | StoreSpaceCommand | ShowCommand | CLICommand] = {
     def getParserFrom(
         command: StoreCommandName | StoreSpaceCommandName | CLICommandName
     ): StringParser[StoreCommand | StoreSpaceCommand | ShowCommand | CLICommand] =
@@ -63,6 +63,7 @@ object CommandParser {
       _       <- Parser.skipSpaces
       s       <- getParserFrom(command)
     } yield s
+  }
 
   lazy val serverCommandParser: StringParser[StoreCommand | StoreSpaceCommand | ShowCommand] =
     for {
@@ -153,7 +154,7 @@ object CommandParser {
       ParseResult.Failure("key expected", input)
   }
 
-  val pathParser: StringParser[Path] =
+  val pathParser: StringParser[Path] = {
     val parser =
       for {
         root  <- Parser.char('/').optional.map(_.map(_.toString).getOrElse(""))
@@ -162,6 +163,7 @@ object CommandParser {
       } yield Paths.get(root + first, next: _*)
 
     parser.or(Parser.char('/').map(_ => Paths.get("/")))
+  }
 
   val storeNameParser: StringParser[StoreName] =
     for {

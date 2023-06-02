@@ -48,7 +48,7 @@ case class CliJob(defaultStoreDir: Path) extends Job[UniDBConsole.Console, Appli
   def execute(
       command: StoreCommand | StoreSpaceCommand | ShowCommand | CLICommand
   ): ZIO[UniInterpreter.Interpreter, Throwable, RunningState] =
-    command match
+    command match {
       case StoreCommand.Put(store, key, value)     => UniInterpreter.Interpreter.put(store, key, value)
       case StoreCommand.Get(store, key)            => UniInterpreter.Interpreter.get(store, key)
       case StoreCommand.Delete(store, key)         => UniInterpreter.Interpreter.delete(store, key)
@@ -72,6 +72,7 @@ case class CliJob(defaultStoreDir: Path) extends Job[UniDBConsole.Console, Appli
 
       case CLICommand.Help => RunningState.ContinueM
       case CLICommand.Quit => RunningState.StopM
+    }
 
   val replStep: ZIO[UniInterpreter.Interpreter with UniDBConsole.Console, CommandIssue, RunningState] =
     for {

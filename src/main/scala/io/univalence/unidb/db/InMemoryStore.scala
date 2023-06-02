@@ -17,11 +17,12 @@ class InMemoryStoreSpace(name: String) extends StoreSpace(name) { storeSpace =>
           s"store space=${storeSpace.name}: store $name already exists"
         )
       )
-    else
+    else {
       val store = new InMemoryStore(name, storeSpace)
       stores.update(name, store)
 
       Success(store)
+    }
 
   override def getStore(name: String): Try[Store] =
     if (stores.contains(name))
@@ -35,11 +36,12 @@ class InMemoryStoreSpace(name: String) extends StoreSpace(name) { storeSpace =>
 
   override def getOrCreateStore(name: String): Try[Store] =
     if (stores.contains(name)) Success(stores(name))
-    else
+    else {
       val store = new InMemoryStore(name, storeSpace)
       stores.update(name, store)
 
       Success(store)
+    }
 
   override def drop(name: String): Try[Unit] =
     if (stores.contains(name)) Success(stores.remove(name))
@@ -52,18 +54,20 @@ class InMemoryStoreSpace(name: String) extends StoreSpace(name) { storeSpace =>
 
   override def getAllStores: Try[Iterator[String]] = Try(stores.view.keys.iterator)
 
-  override def close(): Unit =
+  override def close(): Unit = {
     stores.foreach(store => store._2.close())
     stores.clear()
+  }
 
 }
 class InMemoryStore private[db] (name: String, storeSpace: InMemoryStoreSpace) extends Store with AutoCloseable {
   store =>
   val data: mutable.TreeMap[String, Record] = mutable.TreeMap.empty
 
-  override def put(key: String, value: ujson.Value): Try[Unit] =
+  override def put(key: String, value: ujson.Value): Try[Unit] = {
     val timestamp = Instant.now().toEpochMilli
     Try(data.update(key, Record(key = key, value = value, timestamp = timestamp, deleted = false)))
+  }
 
   override def delete(key: String): Try[Unit] = Try(data.remove(key))
 

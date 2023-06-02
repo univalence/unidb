@@ -39,13 +39,14 @@ enum StoreSpaceCommand(val name: StoreSpaceCommandName) {
   case DropStore(store: StoreName) extends StoreSpaceCommand(StoreSpaceCommandName.DROPSTORE)
 
   def serialize: String =
-    this match
+    this match {
       case OpenStoreSpace(storeSpaceName, storeSpaceType) => s"${this.name} $storeSpaceName ${storeSpaceType.serialize}"
       case CloseStoreSpace(storeSpaceName: String)        => s"${this.name} $storeSpaceName"
       case CreateStore(store)                             => s"${this.name} ${store.serialize}"
       case GetStore(store)                                => s"${this.name} ${store.serialize}"
       case GetOrCreateStore(store)                        => s"${this.name} ${store.serialize}"
       case DropStore(store)                               => s"${this.name} ${store.serialize}"
+    }
 }
 enum ShowCommand(val name: ShowCommandName) {
   case StoreSpaces extends ShowCommand(ShowCommandName.SPACES)
@@ -67,10 +68,11 @@ enum StoreType(val name: StoreTypeName) {
   case Remote(host: String, port: Int) extends StoreType(StoreTypeName.REMOTE)
 
   def serialize: String =
-    this match
+    this match {
       case InMemory           => s"${this.name}"
       case Persistent         => s"${this.name}"
       case Remote(host, port) => s"${this.name} $host:$port"
+    }
 }
 enum StoreTypeName {
   case INMEMORY, PERSISTENT, REMOTE

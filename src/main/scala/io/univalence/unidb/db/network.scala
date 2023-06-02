@@ -19,16 +19,19 @@ object network {
 
   def receive(socket: SocketChannel, bufferSize: Int = 4096): Try[String] = {
     @tailrec
-    def receiveLoop(data: String): String =
+    def receiveLoop(data: String): String = {
       val readBuffer = ByteBuffer.allocate(bufferSize)
       val byteRead   = socket.read(readBuffer)
       if (byteRead < 0) throw new ConnectException("connection closed")
-      else if (byteRead < bufferSize)
+      else if (byteRead < bufferSize) {
         readBuffer.rewind()
         data + new String(readBuffer.array(), readBuffer.arrayOffset(), byteRead)
-      else
+      }
+      else {
         readBuffer.rewind()
         receiveLoop(data + new String(readBuffer.array(), readBuffer.arrayOffset(), byteRead))
+      }
+    }
 
     Try(receiveLoop(data = ""))
   }

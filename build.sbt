@@ -4,10 +4,14 @@ lazy val root =
   (project in file("."))
     .enablePlugins(JavaAppPackaging)
     .settings(
-      name                 := "unidb",
-      Compile / mainClass  := Some("io.univalence.unidb.UniDBApp"),
-      maintainer := "francois.sarradin@gmail.com",
-      scalacOptions ++= Seq("-deprecation"),
+      name                := "unidb",
+      Compile / mainClass := Some("io.univalence.unidb.UniDBApp"),
+      maintainer          := "francois.sarradin@gmail.com",
+      scalacOptions ++= Seq(
+        "-deprecation",
+        "-no-indent",
+        "-rewrite"
+      ),
       libraryDependencies ++= Seq(
         "dev.zio"     %% "zio"            % libVersion.zio,
         "dev.zio"     %% "zio-streams"    % libVersion.zio,

@@ -13,7 +13,7 @@ import java.nio.file.{Path, Paths}
 
 case class LoadJob(defaultStoreDir: Path, defaultKeyDelim: String) extends Job[Any, ApplicationOption.LoadOption] {
 
-  override def run(option: ApplicationOption.LoadOption): RIO[Any, Unit] =
+  override def run(option: ApplicationOption.LoadOption): RIO[Any, Unit] = {
     val storeDir   = option.storeDir.getOrElse(defaultStoreDir)
     val keyDelim   = option.keyDelim.getOrElse(defaultKeyDelim)
     val fileToLoad = option.fromFile
@@ -52,4 +52,5 @@ case class LoadJob(defaultStoreDir: Path, defaultKeyDelim: String) extends Job[A
         } yield ()
       }
       .provide(StoreSpaceManagerService.layer(storeDir))
+  }
 }

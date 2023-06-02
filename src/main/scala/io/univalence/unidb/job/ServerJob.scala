@@ -30,13 +30,14 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
       } yield ()
     }
 
-  def openServerChannel(port: Int): ServerSocketChannel =
+  def openServerChannel(port: Int): ServerSocketChannel = {
     val socketAddress = new InetSocketAddress(port)
     val serverChannel = ServerSocketChannel.open()
     serverChannel.configureBlocking(false)
     serverChannel.socket().bind(socketAddress)
 
     serverChannel
+  }
 
   def registerKey(nioSelector: Selector, key: SelectionKey): Task[Unit] =
     ZIO.attempt {
@@ -49,7 +50,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
     }
 
   def execute(command: StoreCommand | StoreSpaceCommand | ShowCommand): RIO[StoreSpaceManagerService, ujson.Value] =
-    command match
+    command match {
       case StoreCommand.Put(storeName, key, value) =>
         for {
           storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
@@ -168,6 +169,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
           result     <- storeSpace.getAllStores
           json       <- ZIO.attempt(ujson.Arr.from(result.map(r => ujson.Str(r))))
         } yield json
+    }
 
   def serve(data: String): RIO[StoreSpaceManagerService, ServerResponse] = {
     val serveStep: ZIO[StoreSpaceManagerService, CommandIssue, Value] =
@@ -192,7 +194,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
 
   def serveKey(key: SelectionKey): RIO[StoreSpaceManagerService, Unit] =
     ZIO.scoped {
-      def serveLoop(client: SocketChannel): RIO[StoreSpaceManagerService, Boolean] =
+      def serveLoop(client: SocketChannel): RIO[StoreSpaceManagerService, Boolean] = {
         def answer(request: String): RIO[StoreSpaceManagerService, Unit] =
           for {
             response <- serve(request)
@@ -218,6 +220,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
           shouldCloseConnection = data.trim.toUpperCase == network.CloseConnectionMessage
           _ <- answer(data).when(!shouldCloseConnection && data.nonEmpty)
         } yield shouldCloseConnection
+      }
 
       for {
         client <- ZIO.fromAutoCloseable(ZIO.succeed(key.channel().asInstanceOf[SocketChannel]))
@@ -252,7 +255,7 @@ enum ServerResponse {
   case KO(error: String)
 
   override def toString: String =
-    this match
+    this match {
       case OK(value) =>
         ujson
           .Obj(
@@ -267,4 +270,5 @@ enum ServerResponse {
             "value"  -> ujson.Str(error)
           )
           .toString
+    }
 }

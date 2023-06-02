@@ -54,7 +54,7 @@ object UniDBApp extends ZIOAppDefault {
           option <- getArgs.flatMap(a => ZIO.fromTry(ArgParser.parse(a)))
           _      <- ZIO.attempt(Files.createDirectories(defaultStoreDir))
           _ <-
-            option match
+            option match {
               case o: ApplicationOption.CliOption =>
                 val ConsoleLayer: ZLayer[Any, Throwable, UniDBConsole.Console] =
                   (ZLayer.succeed(zio.Console.ConsoleLive)
@@ -74,6 +74,7 @@ object UniDBApp extends ZIOAppDefault {
 
               case o: arg.ApplicationOption.DumpOption =>
                 DumpJob(defaultStoreDir).run(o)
+            }
         } yield ()
       ).foldZIO(
         {
