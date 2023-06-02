@@ -63,6 +63,8 @@ case class CliJob(defaultStoreDir: Path) extends Job[UniDBConsole.Console, Appli
 
       case StoreSpaceCommand.OpenStoreSpace(name, storeSpaceType) =>
         UniInterpreter.Interpreter.openStoreSpace(name, storeSpaceType)
+      case StoreSpaceCommand.CloseStoreSpace(name) =>
+        UniInterpreter.Interpreter.closeStoreSpace(name)
       case ShowCommand.StoreSpaces =>
         UniInterpreter.Interpreter.showStoreSpaces()
       case ShowCommand.Stores(storeSpace) =>

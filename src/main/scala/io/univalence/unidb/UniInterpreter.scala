@@ -24,6 +24,7 @@ object UniInterpreter {
     def dropStore(storeName: StoreName): Task[RunningState]
 
     def openStoreSpace(name: String, storeSpaceType: StoreType): Task[RunningState]
+    def closeStoreSpace(name: String): Task[RunningState]
     def showStoreSpaces(): Task[RunningState]
     def showStores(storeSpace: String): Task[RunningState]
   }
@@ -66,6 +67,9 @@ object UniInterpreter {
     def openStoreSpace(name: String, storeSpaceType: StoreType): ZIO[Interpreter, Throwable, RunningState] =
       ZIO.serviceWithZIO[Interpreter](_.openStoreSpace(name, storeSpaceType))
 
+    def closeStoreSpace(name: String): ZIO[Interpreter, Throwable, RunningState] =
+      ZIO.serviceWithZIO[Interpreter](_.closeStoreSpace(name))
+
     def showStoreSpaces(): ZIO[Interpreter, Throwable, RunningState] =
       ZIO.serviceWithZIO[Interpreter](_.showStoreSpaces())
 
@@ -100,7 +104,7 @@ object UniInterpreter {
       for {
         storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
-        records    <- limit.fold(store.getFrom(prefix))(l => store.getFrom(prefix).map(_.take(l)))
+        records    <- store.getFrom(prefix, limit)
         _          <- printRecords(records.toList)
       } yield RunningState.Continue
 
@@ -108,7 +112,7 @@ object UniInterpreter {
       for {
         storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
-        records    <- limit.fold(store.getPrefix(prefix))(l => store.getPrefix(prefix).map(_.take(l)))
+        records    <- store.getPrefix(prefix, limit)
         _          <- printRecords(records.toList)
       } yield RunningState.Continue
 
@@ -116,7 +120,7 @@ object UniInterpreter {
       for {
         storeSpace <- manager.getPersistent(storeName.storeSpace)
         store      <- storeSpace.getOrCreateStore(storeName.store)
-        records    <- limit.fold(store.scan())(l => store.scan().map(_.take(l)))
+        records    <- store.scan(limit)
         _          <- printRecords(records.toList)
       } yield RunningState.Continue
 
@@ -156,6 +160,8 @@ object UniInterpreter {
         }
 
       result *> RunningState.ContinueM
+
+    override def closeStoreSpace(name: String): Task[RunningState] = manager.close(name) *> RunningState.ContinueM
 
     override def showStoreSpaces(): Task[RunningState] =
       for {

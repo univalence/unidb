@@ -25,7 +25,7 @@ import scala.util.hashing.MurmurHash3
 def init(topic: String, group: String): Unit = {
   import streaming.*
 
-  Using(RemoteStoreSpace("rdb", "localhost", 19040).get) { rdb =>
+  Using(RemoteStoreSpace("rdb", ???).get) { rdb =>
     (for {
       topicTable <- rdb.createStore("__topic")
       _ <-
@@ -66,7 +66,7 @@ case class TopicPartition(topic: String, partition: Int)
 class Producer(host: String, port: Int) extends AutoCloseable {
   import streaming.*
 
-  val rdb = RemoteStoreSpace("rdb", host, port).get
+  val rdb = RemoteStoreSpace("rdb", null).get
 
   override def close(): Unit = rdb.close()
 
@@ -100,7 +100,7 @@ class Producer(host: String, port: Int) extends AutoCloseable {
 class Consumer(host: String, port: Int, group: String) extends AutoCloseable {
   import streaming.*
 
-  val rdb = RemoteStoreSpace("rdb", host, port).get
+  val rdb = RemoteStoreSpace("rdb", null).get
 
   override def close(): Unit = rdb.close()
 

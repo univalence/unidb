@@ -14,6 +14,7 @@ trait StoreSpaceManagerService {
   def getOrCreatePersistent(name: String): Task[ZStoreSpace]
   def getOrOpenRemote(name: String, host: String, port: Int): Task[ZStoreSpace]
   def getAllSpaces: Task[Iterator[String]]
+  def close(name: String): Task[Unit]
 }
 object StoreSpaceManagerService {
   def getPersistent(name: String): RIO[StoreSpaceManagerService, ZStoreSpace] =
@@ -26,6 +27,8 @@ object StoreSpaceManagerService {
     ZIO.serviceWithZIO[StoreSpaceManagerService](_.getOrOpenRemote(name, host, port))
   def getAllSpaces: RIO[StoreSpaceManagerService, Iterator[String]] =
     ZIO.serviceWithZIO[StoreSpaceManagerService](_.getAllSpaces)
+  def close(name: String): RIO[StoreSpaceManagerService, Unit] =
+    ZIO.serviceWithZIO[StoreSpaceManagerService](_.close(name))
 
   def layer(baseDir: Path): ZLayer[Any, Throwable, StoreSpaceManagerService] =
     ZLayer.scoped {
@@ -49,6 +52,8 @@ class StoreSpaceManagerServiceLive(baseDir: Path) extends StoreSpaceManagerServi
 
   override def getAllSpaces: Task[Iterator[String]] = ZIO.fromTry(manager.getAllSpaces)
 
+  override def close(name: String): Task[Unit] = ZIO.fromTry(manager.close(name))
+
   override def close(): Unit = manager.close()
 }
 
@@ -61,10 +66,12 @@ case class ZStoreSpace(storeSpace: StoreSpace) {
 }
 
 case class ZStore(store: Store) {
-  def put(key: String, value: ujson.Value): Task[Unit]     = ZIO.fromTry(store.put(key, value))
-  def delete(key: String): Task[Unit]                      = ZIO.fromTry(store.delete(key))
-  def get(key: String): Task[ujson.Value]                  = ZIO.fromTry(store.get(key))
-  def getFrom(key: String): Task[Iterator[db.Record]]      = ZIO.fromTry(store.getFrom(key))
-  def getPrefix(prefix: String): Task[Iterator[db.Record]] = ZIO.fromTry(store.getPrefix(prefix))
-  def scan(): Task[Iterator[db.Record]]                    = ZIO.fromTry(store.scan())
+  def put(key: String, value: ujson.Value): Task[Unit] = ZIO.fromTry(store.put(key, value))
+  def delete(key: String): Task[Unit]                  = ZIO.fromTry(store.delete(key))
+  def get(key: String): Task[ujson.Value]              = ZIO.fromTry(store.get(key))
+  def getFrom(key: String, limit: Option[Int] = None): Task[Iterator[db.Record]] =
+    ZIO.fromTry(store.getFrom(key, limit))
+  def getPrefix(prefix: String, limit: Option[Int] = None): Task[Iterator[db.Record]] =
+    ZIO.fromTry(store.getPrefix(prefix, limit))
+  def scan(limit: Option[Int] = None): Task[Iterator[db.Record]] = ZIO.fromTry(store.scan(limit))
 }

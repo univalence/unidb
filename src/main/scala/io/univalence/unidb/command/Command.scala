@@ -32,6 +32,7 @@ enum StoreCommand(val name: StoreCommandName) {
 enum StoreSpaceCommand(val name: StoreSpaceCommandName) {
   case OpenStoreSpace(storeSpaceName: String, storeSpaceType: StoreType)
       extends StoreSpaceCommand(StoreSpaceCommandName.OPEN)
+  case CloseStoreSpace(storeSpaceName: String) extends StoreSpaceCommand(StoreSpaceCommandName.CLOSE)
   case CreateStore(store: StoreName) extends StoreSpaceCommand(StoreSpaceCommandName.CREATESTORE)
   case GetStore(store: StoreName) extends StoreSpaceCommand(StoreSpaceCommandName.GETSTORE)
   case GetOrCreateStore(store: StoreName) extends StoreSpaceCommand(StoreSpaceCommandName.GETORCREATESTORE)
@@ -40,6 +41,7 @@ enum StoreSpaceCommand(val name: StoreSpaceCommandName) {
   def serialize: String =
     this match
       case OpenStoreSpace(storeSpaceName, storeSpaceType) => s"${this.name} $storeSpaceName ${storeSpaceType.serialize}"
+      case CloseStoreSpace(storeSpaceName: String)        => s"${this.name} $storeSpaceName"
       case CreateStore(store)                             => s"${this.name} ${store.serialize}"
       case GetStore(store)                                => s"${this.name} ${store.serialize}"
       case GetOrCreateStore(store)                        => s"${this.name} ${store.serialize}"
@@ -87,7 +89,7 @@ enum StoreCommandName {
 }
 enum StoreSpaceCommandName {
   case OPEN
-//  case CLOSE
+  case CLOSE
   case SHOW
 
   case CREATESTORE

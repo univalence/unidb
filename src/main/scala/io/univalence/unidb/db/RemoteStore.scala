@@ -2,7 +2,7 @@ package io.univalence.unidb.db
 
 import ujson.Value
 
-import io.univalence.unidb.command.{StoreCommand, StoreSpaceCommand, StoreType}
+import io.univalence.unidb.command.{ShowCommand, StoreCommand, StoreSpaceCommand, StoreType}
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -63,8 +63,7 @@ class RemoteStoreSpace private[db] (name: String, socket: SocketChannel) extends
         else
           Try {
             if (!stores.contains(name)) {
-              val store = new RemoteStore(name, this)
-              stores.update(name, store)
+              register(name)
             }
             stores(name)
           }
@@ -85,12 +84,10 @@ class RemoteStoreSpace private[db] (name: String, socket: SocketChannel) extends
 
   override def getAllStores: Try[Iterator[String]] = Try(stores.view.keys.iterator)
 
-  override def close(): Unit =
-    sendClose().get
-    stores.clear()
-    socket.close()
+  override def close(): Unit = stores.clear()
 
   private[db] def send(request: String): Try[ujson.Value] =
+    println(s"sending: $request")
     for {
       byteWritten <- network.sendAll(request, socket)
       receivedData <-
@@ -101,43 +98,46 @@ class RemoteStoreSpace private[db] (name: String, socket: SocketChannel) extends
       json <- Try(ujson.read(receivedData))
     } yield json
 
-  private[db] def sendClose(): Try[Unit] =
-    for {
-      byteWritten <- network.sendAll("CLOSE", socket)
-      _ <-
-        if (byteWritten < 0) {
-          Failure(new ConnectException("connection closed"))
-        } else {
-          Success(())
-        }
-    } yield ()
+  private[db] def register(name: String): Try[Unit] = Try(stores.update(name, new RemoteStore(name, this)))
 
 }
 
 object RemoteStoreSpace {
 
-  def apply(name: String, host: String, port: Int): Try[RemoteStoreSpace] =
+  import tryext.*
+
+  def apply(name: String, socket: SocketChannel): Try[RemoteStoreSpace] =
+    def openRemote(remote: RemoteStoreSpace): Try[Unit] =
+      for {
+        data     <- remote.send(StoreSpaceCommand.OpenStoreSpace(name, StoreType.Persistent).serialize)
+        response <- Try(data.obj)
+        status   <- Try(response("status").str)
+        value    <- Try(response("value"))
+        _ <-
+          if (status == "KO")
+            Failure(new ConnectException(value.toString()))
+          else
+            Success(())
+      } yield ()
+
+    def getAllStores(remote: RemoteStoreSpace): Try[Iterator[String]] =
+      for {
+        data: ujson.Value <- remote.send(ShowCommand.Stores(name).serialize)
+        response          <- Try(data.obj)
+        status            <- Try(response("status").str)
+        value             <- Try(response("value"))
+        stores <-
+          if (status == "KO")
+            Failure(new ConnectException(value.toString()))
+          else
+            Try(value.arr.map(_.str).iterator)
+      } yield stores
+
     for {
-      socket <-
-        Try(SocketChannel.open(new InetSocketAddress(host, port)))
-          .transform(
-            Try.apply(_),
-            {
-              case _: UnresolvedAddressException =>
-                Failure(new ConnectException(s"Unresolvable remote $host:$port"))
-              case e => Failure(e)
-            }
-          )
-      remote   <- Try(new RemoteStoreSpace(name, socket))
-      data     <- remote.send(StoreSpaceCommand.OpenStoreSpace(name, StoreType.Persistent).serialize)
-      response <- Try(data.obj)
-      status   <- Try(response("status").str)
-      value    <- Try(response.value)
-      _ <-
-        if (status == "KO")
-          Failure(new ConnectException(value.toString()))
-        else
-          Success(())
+      remote <- Try(new RemoteStoreSpace(name, socket))
+      _      <- openRemote(remote)
+      stores <- getAllStores(remote)
+      _      <- stores.map(remote.register).sequence
     } yield remote
 
 }
@@ -186,9 +186,9 @@ class RemoteStore private[db] (name: String, storeSpace: RemoteStoreSpace) exten
           Try(value)
     } yield result
 
-  override def getFrom(key: String): Try[Iterator[Record]] =
+  override def getFrom(key: String, limit: Option[Int] = None): Try[Iterator[Record]] =
     for {
-      data     <- storeSpace.send(StoreCommand.GetFrom(StoreName(storeSpaceName, name), key, None).serialize)
+      data     <- storeSpace.send(StoreCommand.GetFrom(StoreName(storeSpaceName, name), key, limit).serialize)
       response <- Try(data.obj)
       status   <- Try(response(statusField).str)
       value    <- Try(response(valueField))
@@ -210,9 +210,9 @@ class RemoteStore private[db] (name: String, storeSpace: RemoteStoreSpace) exten
           )
     } yield result
 
-  override def getPrefix(prefix: String): Try[Iterator[Record]] =
+  override def getPrefix(prefix: String, limit: Option[Int] = None): Try[Iterator[Record]] =
     for {
-      data     <- storeSpace.send(StoreCommand.GetWithPrefix(StoreName(storeSpaceName, name), prefix, None).serialize)
+      data     <- storeSpace.send(StoreCommand.GetWithPrefix(StoreName(storeSpaceName, name), prefix, limit).serialize)
       response <- Try(data.obj)
       status   <- Try(response(statusField).str)
       value    <- Try(response(valueField))
@@ -234,9 +234,9 @@ class RemoteStore private[db] (name: String, storeSpace: RemoteStoreSpace) exten
           )
     } yield result
 
-  override def scan(): Try[Iterator[Record]] =
+  override def scan(limit: Option[Int] = None): Try[Iterator[Record]] =
     for {
-      data     <- storeSpace.send(StoreCommand.GetAll(StoreName(storeSpaceName, name), None).serialize)
+      data     <- storeSpace.send(StoreCommand.GetAll(StoreName(storeSpaceName, name), limit).serialize)
       response <- Try(data.obj)
       status   <- Try(response(statusField).str)
       value    <- Try(response(valueField))

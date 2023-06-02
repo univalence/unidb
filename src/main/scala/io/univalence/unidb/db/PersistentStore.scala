@@ -142,17 +142,34 @@ class PersistentStore private[db] (val name: String, val file: Path, storeSpace:
         )
       )
 
-  override def getFrom(key: String): Try[Iterator[Record]] = Try(data.iteratorFrom(key).map(_._2))
-
-  override def getPrefix(prefix: String): Try[Iterator[Record]] =
+  override def getFrom(key: String, limit: Option[Int] = None): Try[Iterator[Record]] =
     Try {
-      data
-        .iteratorFrom(prefix)
-        .filter((key, _) => key.startsWith(prefix))
-        .map(_._2)
+      val stream = data.iteratorFrom(key).map(_._2)
+      limit
+        .map(l => stream.take(l))
+        .getOrElse(stream)
     }
 
-  override def scan(): Try[Iterator[Record]] = Try(data.iterator.map(_._2))
+  override def getPrefix(prefix: String, limit: Option[Int] = None): Try[Iterator[Record]] =
+    Try {
+      val stream =
+        data
+          .iteratorFrom(prefix)
+          .filter((key, _) => key.startsWith(prefix))
+          .map(_._2)
+
+      limit
+        .map(l => stream.take(l))
+        .getOrElse(stream)
+    }
+
+  override def scan(limit: Option[Int] = None): Try[Iterator[Record]] =
+    Try {
+      val stream = data.iterator.map(_._2)
+      limit
+        .map(l => stream.take(l))
+        .getOrElse(stream)
+    }
 
   override def close(): Unit = data.clear()
 

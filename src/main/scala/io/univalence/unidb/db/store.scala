@@ -14,9 +14,9 @@ trait Store {
   def put(key: String, value: ujson.Value): Try[Unit]
   def get(key: String): Try[ujson.Value]
   def delete(key: String): Try[Unit]
-  def getFrom(key: String): Try[Iterator[Record]]
-  def getPrefix(prefix: String): Try[Iterator[Record]]
-  def scan(): Try[Iterator[Record]]
+  def getFrom(key: String, limit: Option[Int] = None): Try[Iterator[Record]]
+  def getPrefix(prefix: String, limit: Option[Int] = None): Try[Iterator[Record]]
+  def scan(limit: Option[Int] = None): Try[Iterator[Record]]
 }
 
 case class Record(key: String, value: ujson.Value, timestamp: Long, deleted: Boolean)

@@ -65,11 +65,11 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
           result     <- store.get(key)
         } yield result
 
-      case StoreCommand.GetFrom(storeName, key, _) =>
+      case StoreCommand.GetFrom(storeName, key, limit) =>
         for {
           storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           store      <- storeSpace.getStore(storeName.store)
-          iter       <- store.getFrom(key)
+          iter       <- store.getFrom(key, limit)
         } yield ujson.Arr.from(
           iter.map(record =>
             ujson.Obj(
@@ -87,11 +87,11 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
           _          <- store.delete(key)
         } yield ujson.Null
 
-      case StoreCommand.GetWithPrefix(storeName, prefix, _) =>
+      case StoreCommand.GetWithPrefix(storeName, prefix, limit) =>
         for {
           storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           store      <- storeSpace.getStore(storeName.store)
-          iter       <- store.getPrefix(prefix)
+          iter       <- store.getPrefix(prefix, limit)
         } yield ujson.Arr.from(
           iter.map(record =>
             ujson.Obj(
@@ -102,11 +102,11 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
           )
         )
 
-      case StoreCommand.GetAll(storeName, _) =>
+      case StoreCommand.GetAll(storeName, limit) =>
         for {
           storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           store      <- storeSpace.getStore(storeName.store)
-          iter       <- store.scan()
+          iter       <- store.scan(limit)
         } yield ujson.Arr.from(
           iter.map(record =>
             ujson.Obj(
@@ -194,7 +194,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
         def answer(request: String): RIO[StoreSpaceManagerService, Unit] =
           for {
             response <- serve(request)
-            _        <- Console.printLine(s"sending response: ${response.toString}")
+            _        <- Console.printLine(s"sending response: ${response.toString.take(100)}")
             _        <- ZIO.fromTry(network.sendAll(response.toString, client))
           } yield ()
 

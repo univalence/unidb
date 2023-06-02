@@ -48,8 +48,9 @@ object CommandParser {
           commandStoreNameParser.map(StoreSpaceCommand.GetOrCreateStore.apply)
         case StoreSpaceCommandName.DROPSTORE => commandStoreNameParser.map(StoreSpaceCommand.DropStore.apply)
 
-        case StoreSpaceCommandName.OPEN => storeSpaceParser
-        case StoreSpaceCommandName.SHOW => showParser
+        case StoreSpaceCommandName.OPEN  => openStoreSpaceParser
+        case StoreSpaceCommandName.CLOSE => closeStoreSpaceParser
+        case StoreSpaceCommandName.SHOW  => showParser
 
         case CLICommandName.QUIT => Parser(CLICommand.Quit)
         case CLICommandName.EXIT => Parser(CLICommand.Quit)
@@ -87,8 +88,9 @@ object CommandParser {
             commandStoreNameParser.map(StoreSpaceCommand.GetOrCreateStore.apply)
           case StoreSpaceCommandName.DROPSTORE => commandStoreNameParser.map(StoreSpaceCommand.DropStore.apply)
 
-          case StoreSpaceCommandName.OPEN => storeSpaceParser
-          case StoreSpaceCommandName.SHOW => showParser
+          case StoreSpaceCommandName.OPEN  => openStoreSpaceParser
+          case StoreSpaceCommandName.CLOSE => closeStoreSpaceParser
+          case StoreSpaceCommandName.SHOW  => showParser
         }
     } yield s
 
@@ -302,7 +304,14 @@ object CommandParser {
       _ <- Parser.skipSpaces
     } yield command
 
-  val storeSpaceParser: StringParser[StoreSpaceCommand] =
+  val closeStoreSpaceParser: StringParser[StoreSpaceCommand.CloseStoreSpace] =
+    for {
+      _          <- Parser.skipSpaces
+      storeSpace <- identifier
+      _          <- Parser.skipSpaces
+    } yield StoreSpaceCommand.CloseStoreSpace(storeSpace)
+
+  val openStoreSpaceParser: StringParser[StoreSpaceCommand] =
     for {
       _          <- Parser.skipSpaces
       storeSpace <- identifier
