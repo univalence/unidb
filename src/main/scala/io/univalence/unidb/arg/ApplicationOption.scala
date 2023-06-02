@@ -27,4 +27,5 @@ enum ApplicationOption {
       storeDir: Option[Path],
       port:     Option[Int]
   )
+  case HelpOption()
 }

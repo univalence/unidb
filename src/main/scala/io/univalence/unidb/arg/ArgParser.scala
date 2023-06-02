@@ -35,6 +35,7 @@ object ArgParser {
       case WEB    => webArgParser
       case LOAD   => loadArgParser
       case DUMP   => dumpArgParser
+      case HELP   => Parser(ApplicationOption.HelpOption())
     }
 
   lazy val cliArgParser: ListStringParser[ApplicationOption.CliOption] =

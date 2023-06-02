@@ -26,33 +26,12 @@ object UniDBApp extends ZIOAppDefault {
   val defaultPort         = 19040
   val defaultWebPort      = 18040
 
-  val helpDisplay: String =
-    s"""UniDB <mode> [options...]
-       |Usage:
-       |  Mode
-       |    cli                   Command line interface (interactive) mode
-       |    server                Server mode
-       |    web                   Web mode
-       |    load                  Load data from file
-       |    dump                  Dump table in output
-       |    help                  Display help
-       |  Common
-       |  --store-dir <FILE>      Change default storage directory
-       |  Server Mode
-       |  --port <INT>            Change listening port in server mode
-       |  Load Mode
-       |  --to <STORE>            Store name to load data to
-       |  --from <FILE>           Load JSON file
-       |  --key <STRING>          Indicate which field to use as key (mandatory)
-       |  --key-delim <CHAR>      Character to use as key delimiter (default: #)
-       |""".stripMargin
-
   override def run = {
     val program =
       (
         for {
           option <- getArgs.flatMap(a => ZIO.fromTry(ArgParser.parse(a)))
-          _      <- ZIO.attempt(Files.createDirectories(defaultStoreDir))
+//          _      <- ZIO.attempt(Files.createDirectories(defaultStoreDir))
           _ <-
             option match {
               case o: ApplicationOption.CliOption =>
@@ -74,6 +53,9 @@ object UniDBApp extends ZIOAppDefault {
 
               case o: arg.ApplicationOption.DumpOption =>
                 DumpJob(defaultStoreDir).run(o)
+
+              case o: arg.ApplicationOption.HelpOption =>
+                HelpJob().run(o)
             }
         } yield ()
       ).foldZIO(
@@ -102,10 +84,6 @@ object UniDBApp extends ZIOAppDefault {
     ZLayer.scoped {
       ZIO.fromAutoCloseable(ZIO.succeed(terminal))
     }
-  }
-
-  enum RunningMode {
-    case CLI, SERVER, LOAD, DUMP
   }
 
 }

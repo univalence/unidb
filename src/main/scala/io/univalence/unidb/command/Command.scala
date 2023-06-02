@@ -78,7 +78,7 @@ enum StoreTypeName {
   case INMEMORY, PERSISTENT, REMOTE
 }
 enum RunningMode {
-  case CLI, SERVER, WEB, LOAD, DUMP
+  case CLI, SERVER, WEB, LOAD, DUMP, HELP
 }
 
 enum StoreCommandName {
