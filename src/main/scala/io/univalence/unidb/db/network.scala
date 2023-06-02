@@ -1,11 +1,12 @@
 package io.univalence.unidb.db
 
+import scala.annotation.tailrec
+import scala.util.Try
+
 import java.net.ConnectException
 import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 import java.nio.charset.StandardCharsets
-import scala.annotation.tailrec
-import scala.util.Try
 
 object network {
 
@@ -18,7 +19,7 @@ object network {
     @tailrec
     def receiveLoop(data: String): String =
       val readBuffer = ByteBuffer.allocate(bufferSize)
-      val byteRead = socket.read(readBuffer)
+      val byteRead   = socket.read(readBuffer)
       if (byteRead < 0) throw new ConnectException("connection closed")
       else if (byteRead < bufferSize)
         readBuffer.rewind()
