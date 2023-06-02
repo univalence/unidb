@@ -92,7 +92,7 @@ object ArgParser {
               fromFile  = parameters(fromParameter).asInstanceOf[Path],
               keyFields = parameters(keyFieldsParameter).asInstanceOf[List[String]],
               keyDelim  = parameters.get(keyDelimParameter).map(_.asInstanceOf[String]),
-              store     = parameters(toParameter).asInstanceOf[StoreName]
+              toStore   = parameters(toParameter).asInstanceOf[StoreName]
             )
           )
       }
@@ -103,14 +103,14 @@ object ArgParser {
         storeDirParameterParser,
         fromStoreParameterParser
       )
-      .map { parameters =>
+      .flatMap { parameters =>
         if (!parameters.contains(fromParameter))
           Parser.fail("this parameter is missing: " + fromParameter)
         else
           Parser(
             ApplicationOption.DumpOption(
-              storeDir  = parameters(storeDirParameter),
-              fromStore = parameters(fromParameter)
+              storeDir  = parameters(storeDirParameter).asInstanceOf[Option[Path]],
+              fromStore = parameters(fromParameter).asInstanceOf[StoreName]
             )
           )
       }

@@ -49,7 +49,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
       socketChannel.register(nioSelector, SelectionKey.OP_READ)
     }
 
-  def execute(command: StoreCommand | StoreSpaceCommand): RIO[StoreSpaceManagerService, ujson.Value] =
+  def execute(command: StoreCommand | StoreSpaceCommand | ShowCommand): RIO[StoreSpaceManagerService, ujson.Value] =
     command match
       case StoreCommand.Put(storeName, key, value) =>
         for {
@@ -117,25 +117,25 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
           )
         )
 
-      case StoreCommand.CreateStore(storeName) =>
+      case StoreSpaceCommand.CreateStore(storeName) =>
         for {
           storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           _          <- storeSpace.createStore(storeName.store)
         } yield ujson.Null
 
-      case StoreCommand.GetStore(storeName) =>
+      case StoreSpaceCommand.GetStore(storeName) =>
         for {
           storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           _          <- storeSpace.getStore(storeName.store)
         } yield ujson.Null
 
-      case StoreCommand.GetOrCreateStore(storeName) =>
+      case StoreSpaceCommand.GetOrCreateStore(storeName) =>
         for {
           storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           _          <- storeSpace.getOrCreateStore(storeName.store)
         } yield ujson.Null
 
-      case StoreCommand.DropStore(storeName) =>
+      case StoreSpaceCommand.DropStore(storeName) =>
         for {
           storeSpace <- StoreSpaceManagerService.getPersistent(storeName.storeSpace)
           _          <- storeSpace.dropStore(storeName.store)
@@ -153,6 +153,12 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
           }
 
         result *> ZIO.succeed(ujson.Null)
+
+      case ShowCommand.StoreSpaces =>
+        for {
+          result <- StoreSpaceManagerService.getAllSpaces
+          json   <- ZIO.attempt(ujson.Arr.from(result.map(r => ujson.Str(r))))
+        } yield json
 
   def serve(data: String): RIO[StoreSpaceManagerService, ServerResponse] = {
     val serveStep: ZIO[StoreSpaceManagerService, CommandIssue, Value] =

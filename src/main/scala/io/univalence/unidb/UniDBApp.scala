@@ -2,15 +2,18 @@ package io.univalence.unidb
 
 import org.jline.reader.{EndOfFileException, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
+
 import io.univalence.unidb.arg.{ApplicationOption, ArgParser}
 import io.univalence.unidb.command.*
 import io.univalence.unidb.command.CommandIssue.Empty
 import io.univalence.unidb.job.{CliJob, DumpJob, LoadJob, ServerJob, WebJob}
+
 import zio.*
 import zio.stream.*
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try, Using}
+
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
@@ -99,7 +102,7 @@ object UniDBApp extends ZIOAppDefault {
       ZIO.fromAutoCloseable(ZIO.succeed(terminal))
     }
   }
-  
+
   enum RunningMode {
     case CLI, SERVER, LOAD, DUMP
   }

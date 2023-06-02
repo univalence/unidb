@@ -21,7 +21,7 @@ class RemoteStoreSpace private[db] (name: String, socket: SocketChannel) extends
 
   override def createStore(name: String): Try[Store] =
     for {
-      data     <- send(StoreCommand.CreateStore(StoreName(storeSpaceName, name)).serialize)
+      data     <- send(StoreSpaceCommand.CreateStore(StoreName(storeSpaceName, name)).serialize)
       response <- Try(data.obj)
       status   <- Try(response(statusField).str)
       value    <- Try(response(valueField))
@@ -38,7 +38,7 @@ class RemoteStoreSpace private[db] (name: String, socket: SocketChannel) extends
 
   override def getStore(name: String): Try[Store] =
     for {
-      data     <- send(StoreCommand.GetStore(StoreName(storeSpaceName, name)).serialize)
+      data     <- send(StoreSpaceCommand.GetStore(StoreName(storeSpaceName, name)).serialize)
       response <- Try(data.obj)
       status   <- Try(response(statusField).str)
       value    <- Try(response(valueField))
@@ -53,7 +53,7 @@ class RemoteStoreSpace private[db] (name: String, socket: SocketChannel) extends
 
   override def getOrCreateStore(name: String): Try[Store] =
     for {
-      data     <- send(StoreCommand.GetOrCreateStore(StoreName(storeSpaceName, name)).serialize)
+      data     <- send(StoreSpaceCommand.GetOrCreateStore(StoreName(storeSpaceName, name)).serialize)
       response <- Try(data.obj)
       status   <- Try(response(statusField).str)
       value    <- Try(response(valueField))
@@ -72,7 +72,7 @@ class RemoteStoreSpace private[db] (name: String, socket: SocketChannel) extends
 
   override def drop(name: String): Try[Unit] =
     for {
-      data     <- send(StoreCommand.DropStore(StoreName(storeSpaceName, name)).serialize)
+      data     <- send(StoreSpaceCommand.DropStore(StoreName(storeSpaceName, name)).serialize)
       response <- Try(data.obj)
       status   <- Try(response(statusField).str)
       value    <- Try(response(valueField))

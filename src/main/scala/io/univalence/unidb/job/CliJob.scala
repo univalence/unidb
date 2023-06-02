@@ -1,9 +1,11 @@
 package io.univalence.unidb.job
 
 import org.jline.reader.{EndOfFileException, UserInterruptException}
+
 import io.univalence.unidb.*
 import io.univalence.unidb.arg.ApplicationOption
 import io.univalence.unidb.command.*
+
 import zio.*
 
 import java.net.ConnectException
@@ -25,7 +27,7 @@ case class CliJob(defaultStoreDir: Path) extends Job[UniDBConsole.Console, Appli
 
   def readCommand(
       prompt: String
-  ): ZIO[UniDBConsole.Console, CommandIssue, StoreCommand | StoreSpaceCommand | CLICommand] =
+  ): ZIO[UniDBConsole.Console, CommandIssue, StoreCommand | StoreSpaceCommand | ShowCommand | CLICommand] =
     console
       .read(prompt)
       .foldZIO(
@@ -44,7 +46,7 @@ case class CliJob(defaultStoreDir: Path) extends Job[UniDBConsole.Console, Appli
       )
 
   def execute(
-      command: StoreCommand | StoreSpaceCommand | CLICommand
+      command: StoreCommand | StoreSpaceCommand | ShowCommand | CLICommand
   ): ZIO[UniInterpreter.Interpreter, Throwable, RunningState] =
     command match
       case StoreCommand.Put(store, key, value)     => UniInterpreter.Interpreter.put(store, key, value)
@@ -53,14 +55,16 @@ case class CliJob(defaultStoreDir: Path) extends Job[UniDBConsole.Console, Appli
       case StoreCommand.GetFrom(store, key, limit) => UniInterpreter.Interpreter.getFrom(store, key, limit)
       case StoreCommand.GetWithPrefix(store, prefix, limit) =>
         UniInterpreter.Interpreter.getWithPrefix(store, prefix, limit)
-      case StoreCommand.GetAll(store, limit)    => UniInterpreter.Interpreter.getAll(store, limit)
-      case StoreCommand.CreateStore(store)      => UniInterpreter.Interpreter.createStore(store)
-      case StoreCommand.GetStore(store)         => UniInterpreter.Interpreter.createStore(store)
-      case StoreCommand.GetOrCreateStore(store) => UniInterpreter.Interpreter.createStore(store)
-      case StoreCommand.DropStore(store)        => UniInterpreter.Interpreter.dropStore(store)
+      case StoreCommand.GetAll(store, limit)         => UniInterpreter.Interpreter.getAll(store, limit)
+      case StoreSpaceCommand.CreateStore(store)      => UniInterpreter.Interpreter.createStore(store)
+      case StoreSpaceCommand.GetStore(store)         => UniInterpreter.Interpreter.createStore(store)
+      case StoreSpaceCommand.GetOrCreateStore(store) => UniInterpreter.Interpreter.createStore(store)
+      case StoreSpaceCommand.DropStore(store)        => UniInterpreter.Interpreter.dropStore(store)
 
       case StoreSpaceCommand.OpenStoreSpace(name, storeSpaceType) =>
         UniInterpreter.Interpreter.openStoreSpace(name, storeSpaceType)
+      case ShowCommand.StoreSpaces =>
+        UniInterpreter.Interpreter.showStoreSpaces()
 
       case CLICommand.Help => RunningState.ContinueM
       case CLICommand.Quit => RunningState.StopM

@@ -13,6 +13,7 @@ trait StoreSpaceManagerService {
   def getOrCreateInMemory(name: String): Task[ZStoreSpace]
   def getOrCreatePersistent(name: String): Task[ZStoreSpace]
   def getOrOpenRemote(name: String, host: String, port: Int): Task[ZStoreSpace]
+  def getAllSpaces: Task[Iterator[String]]
 }
 object StoreSpaceManagerService {
   def getPersistent(name: String): RIO[StoreSpaceManagerService, ZStoreSpace] =
@@ -23,6 +24,8 @@ object StoreSpaceManagerService {
     ZIO.serviceWithZIO[StoreSpaceManagerService](_.getOrCreatePersistent(name))
   def getOrOpenRemote(name: String, host: String, port: Int): RIO[StoreSpaceManagerService, ZStoreSpace] =
     ZIO.serviceWithZIO[StoreSpaceManagerService](_.getOrOpenRemote(name, host, port))
+  def getAllSpaces: RIO[StoreSpaceManagerService, Iterator[String]] =
+    ZIO.serviceWithZIO[StoreSpaceManagerService](_.getAllSpaces)
 
   def layer(baseDir: Path): ZLayer[Any, Throwable, StoreSpaceManagerService] =
     ZLayer.scoped {
@@ -43,6 +46,8 @@ class StoreSpaceManagerServiceLive(baseDir: Path) extends StoreSpaceManagerServi
 
   override def getOrOpenRemote(name: String, host: String, port: RuntimeFlags): Task[ZStoreSpace] =
     ZIO.fromTry(manager.getOrOpenRemote(name, host, port)).map(ZStoreSpace.apply)
+
+  override def getAllSpaces: Task[Iterator[String]] = ZIO.fromTry(manager.getAllNames)
 
   override def close(): Unit = manager.close()
 }

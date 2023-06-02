@@ -12,28 +12,28 @@ import java.nio.file.{Path, Paths}
 object CommandParser {
   import ujson.Readable.*
 
-  def cliParse(input: String): Either[CommandIssue, StoreCommand | StoreSpaceCommand | CLICommand] =
-    cliParser.commit
-      .parse(Input(input)) match
+  def cliParse(input: String): Either[CommandIssue, StoreCommand | StoreSpaceCommand | ShowCommand | CLICommand] =
+    cliParser.commit.parse(Input(input)) match {
       case ParseResult.Success(command, _) => Right(command)
       case ParseResult.Failure(reason, input) =>
         Left(CommandIssue.SyntaxError(reason, input.data.mkString, input.offset))
       case ParseResult.Error(reason, input) =>
         Left(CommandIssue.SyntaxError(reason, input.data.mkString, input.offset))
+    }
 
-  def serverParse(input: String): Either[CommandIssue, StoreCommand | StoreSpaceCommand] =
-    serverCommandParser.commit
-      .parse(Input(input)) match
+  def serverParse(input: String): Either[CommandIssue, StoreCommand | StoreSpaceCommand | ShowCommand] =
+    serverCommandParser.commit.parse(Input(input)) match {
       case ParseResult.Success(command, _) => Right(command)
       case ParseResult.Failure(reason, input) =>
         Left(CommandIssue.SyntaxError(reason, input.data.mkString, input.offset))
       case ParseResult.Error(reason, input) =>
         Left(CommandIssue.SyntaxError(reason, input.data.mkString, input.offset))
+    }
 
-  lazy val cliParser: StringParser[StoreCommand | StoreSpaceCommand | CLICommand] =
+  lazy val cliParser: StringParser[StoreCommand | StoreSpaceCommand | ShowCommand | CLICommand] =
     def getParserFrom(
         command: StoreCommandName | StoreSpaceCommandName | CLICommandName
-    ): StringParser[StoreCommand | StoreSpaceCommand | CLICommand] =
+    ): StringParser[StoreCommand | StoreSpaceCommand | ShowCommand | CLICommand] =
       command match {
         case StoreCommandName.GET       => getParser
         case StoreCommandName.PUT       => putParser
@@ -42,12 +42,14 @@ object CommandParser {
         case StoreCommandName.GETPREFIX => getPrefixParser
         case StoreCommandName.GETALL    => getAllParser
 
-        case StoreCommandName.CREATESTORE      => commandStoreNameParser.map(StoreCommand.CreateStore.apply)
-        case StoreCommandName.GETSTORE         => commandStoreNameParser.map(StoreCommand.GetStore.apply)
-        case StoreCommandName.GETORCREATESTORE => commandStoreNameParser.map(StoreCommand.GetOrCreateStore.apply)
-        case StoreCommandName.DROPSTORE        => commandStoreNameParser.map(StoreCommand.DropStore.apply)
+        case StoreSpaceCommandName.CREATESTORE => commandStoreNameParser.map(StoreSpaceCommand.CreateStore.apply)
+        case StoreSpaceCommandName.GETSTORE    => commandStoreNameParser.map(StoreSpaceCommand.GetStore.apply)
+        case StoreSpaceCommandName.GETORCREATESTORE =>
+          commandStoreNameParser.map(StoreSpaceCommand.GetOrCreateStore.apply)
+        case StoreSpaceCommandName.DROPSTORE => commandStoreNameParser.map(StoreSpaceCommand.DropStore.apply)
 
         case StoreSpaceCommandName.OPEN => storeSpaceParser
+        case StoreSpaceCommandName.SHOW => showParser
 
         case CLICommandName.QUIT => Parser(CLICommand.Quit)
         case CLICommandName.EXIT => Parser(CLICommand.Quit)
@@ -61,7 +63,7 @@ object CommandParser {
       s       <- getParserFrom(command)
     } yield s
 
-  lazy val serverCommandParser: StringParser[StoreCommand | StoreSpaceCommand] =
+  lazy val serverCommandParser: StringParser[StoreCommand | StoreSpaceCommand | ShowCommand] =
     for {
       command <-
         for {
@@ -79,12 +81,14 @@ object CommandParser {
           case StoreCommandName.GETPREFIX => getPrefixParser
           case StoreCommandName.GETALL    => getAllParser
 
-          case StoreCommandName.CREATESTORE      => commandStoreNameParser.map(StoreCommand.CreateStore.apply)
-          case StoreCommandName.GETSTORE         => commandStoreNameParser.map(StoreCommand.GetStore.apply)
-          case StoreCommandName.GETORCREATESTORE => commandStoreNameParser.map(StoreCommand.GetOrCreateStore.apply)
-          case StoreCommandName.DROPSTORE        => commandStoreNameParser.map(StoreCommand.DropStore.apply)
+          case StoreSpaceCommandName.CREATESTORE => commandStoreNameParser.map(StoreSpaceCommand.CreateStore.apply)
+          case StoreSpaceCommandName.GETSTORE    => commandStoreNameParser.map(StoreSpaceCommand.GetStore.apply)
+          case StoreSpaceCommandName.GETORCREATESTORE =>
+            commandStoreNameParser.map(StoreSpaceCommand.GetOrCreateStore.apply)
+          case StoreSpaceCommandName.DROPSTORE => commandStoreNameParser.map(StoreSpaceCommand.DropStore.apply)
 
           case StoreSpaceCommandName.OPEN => storeSpaceParser
+          case StoreSpaceCommandName.SHOW => showParser
         }
     } yield s
 
@@ -278,29 +282,48 @@ object CommandParser {
       _     <- Parser.skipSpaces
     } yield store
 
-  val storeSpaceParser: StringParser[StoreSpaceCommand] =
+  val showParser: StringParser[ShowCommand] =
     for {
-      _          <- Parser.skipSpaces
-      storeSpace <- identifier
-      _          <- Parser.skipSpaces
+      _ <- Parser.skipSpaces
       command <-
         word
           .map(_.toUpperCase)
           .flatMap { optionName =>
-            if (optionName == StoreTypeName.INMEMORY.toString)
-              Parser(StoreSpaceCommand.OpenStoreSpace(storeSpace, StoreType.InMemory))
-            else if (optionName == StoreTypeName.PERSISTENT.toString)
-              Parser(StoreSpaceCommand.OpenStoreSpace(storeSpace, StoreType.Persistent))
-            else if (optionName == StoreTypeName.REMOTE.toString)
-              for {
-                _    <- Parser.skipSpaces
-                host <- word
-                _    <- Parser.char(':')
-                port <- Parser.uint
-              } yield StoreSpaceCommand.OpenStoreSpace(storeSpace, StoreType.Remote(host, port))
+            if (optionName == ShowCommandName.STORESPACES.toString)
+              Parser(ShowCommand.StoreSpaces)
             else
-              Parser.fail(s"unknown option $optionName")
+              Parser.fail(s"unknown SHOW option $optionName")
           }
+      _ <- Parser.skipSpaces
+    } yield command
+
+  val storeSpaceParser: StringParser[StoreSpaceCommand] =
+    for {
+      _          <- Parser.skipSpaces
+      storeSpace <- identifier
+      command <-
+        Parser.skipSpaces
+          .`then`(
+            word
+              .map(_.toUpperCase)
+              .flatMap { optionName =>
+                if (optionName == StoreTypeName.INMEMORY.toString)
+                  Parser(StoreSpaceCommand.OpenStoreSpace(storeSpace, StoreType.InMemory))
+                else if (optionName == StoreTypeName.PERSISTENT.toString)
+                  Parser(StoreSpaceCommand.OpenStoreSpace(storeSpace, StoreType.Persistent))
+                else if (optionName == StoreTypeName.REMOTE.toString)
+                  for {
+                    _    <- Parser.skipSpaces
+                    host <- word
+                    _    <- Parser.char(':')
+                    port <- Parser.uint
+                  } yield StoreSpaceCommand.OpenStoreSpace(storeSpace, StoreType.Remote(host, port))
+                else
+                  Parser.fail(s"unknown option $optionName")
+              }
+          )
+          .optional
+          .map(_.getOrElse(StoreSpaceCommand.OpenStoreSpace(storeSpace, StoreType.Persistent)))
       _ <- Parser.skipSpaces
     } yield command
 

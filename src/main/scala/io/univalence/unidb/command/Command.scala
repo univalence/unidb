@@ -1,8 +1,8 @@
 package io.univalence.unidb.command
 
-import io.univalence.unidb.command.StoreCommand.{DropStore, GetOrCreateStore, GetWithPrefix, Put}
-import io.univalence.unidb.command.StoreSpaceCommand.OpenStoreSpace
-import io.univalence.unidb.command.StoreType.{InMemory, Persistent}
+import io.univalence.unidb.command.StoreCommand.*
+import io.univalence.unidb.command.StoreSpaceCommand.*
+import io.univalence.unidb.command.StoreType.*
 import io.univalence.unidb.db.StoreName
 
 import java.nio.file.Path
@@ -15,10 +15,6 @@ enum StoreCommand(val name: StoreCommandName) {
       extends StoreCommand(StoreCommandName.GETPREFIX)
   case GetFrom(store: StoreName, key: String, limit: Option[Int]) extends StoreCommand(StoreCommandName.GETFROM)
   case GetAll(store: StoreName, limit: Option[Int]) extends StoreCommand(StoreCommandName.GETALL)
-  case CreateStore(store: StoreName) extends StoreCommand(StoreCommandName.CREATESTORE)
-  case GetStore(store: StoreName) extends StoreCommand(StoreCommandName.GETSTORE)
-  case GetOrCreateStore(store: StoreName) extends StoreCommand(StoreCommandName.GETORCREATESTORE)
-  case DropStore(store: StoreName) extends StoreCommand(StoreCommandName.DROPSTORE)
 
   def serialize: String =
     this match
@@ -31,18 +27,25 @@ enum StoreCommand(val name: StoreCommandName) {
         s"${this.name} ${store.serialize} $key${limit.map(n => s" LIMIT $n").getOrElse("")}"
       case GetAll(store, limit) =>
         s"${this.name} ${store.serialize}${limit.map(n => s" LIMIT $n").getOrElse("")}"
-      case CreateStore(store)      => s"${this.name} ${store.serialize}"
-      case GetStore(store)         => s"${this.name} ${store.serialize}"
-      case GetOrCreateStore(store) => s"${this.name} ${store.serialize}"
-      case DropStore(store)        => s"${this.name} ${store.serialize}"
 }
 enum StoreSpaceCommand(val name: StoreSpaceCommandName) {
   case OpenStoreSpace(storeSpaceName: String, storeSpaceType: StoreType)
       extends StoreSpaceCommand(StoreSpaceCommandName.OPEN)
+  case CreateStore(store: StoreName) extends StoreSpaceCommand(StoreSpaceCommandName.CREATESTORE)
+  case GetStore(store: StoreName) extends StoreSpaceCommand(StoreSpaceCommandName.GETSTORE)
+  case GetOrCreateStore(store: StoreName) extends StoreSpaceCommand(StoreSpaceCommandName.GETORCREATESTORE)
+  case DropStore(store: StoreName) extends StoreSpaceCommand(StoreSpaceCommandName.DROPSTORE)
 
   def serialize: String =
     this match
       case OpenStoreSpace(storeSpaceName, storeSpaceType) => s"${this.name} $storeSpaceName ${storeSpaceType.serialize}"
+      case CreateStore(store)                             => s"${this.name} ${store.serialize}"
+      case GetStore(store)                                => s"${this.name} ${store.serialize}"
+      case GetOrCreateStore(store)                        => s"${this.name} ${store.serialize}"
+      case DropStore(store)                               => s"${this.name} ${store.serialize}"
+}
+enum ShowCommand {
+  case StoreSpaces
 }
 enum CLICommand {
   case Quit
@@ -73,14 +76,20 @@ enum StoreCommandName {
   case GETALL
   case GETFROM
   case GETPREFIX
+}
+enum StoreSpaceCommandName {
+  case OPEN
+//  case CLOSE
+  case SHOW
 
   case CREATESTORE
   case GETSTORE
   case GETORCREATESTORE
   case DROPSTORE
 }
-enum StoreSpaceCommandName {
-  case OPEN
+
+enum ShowCommandName {
+  case STORESPACES
 }
 
 enum CLICommandName {

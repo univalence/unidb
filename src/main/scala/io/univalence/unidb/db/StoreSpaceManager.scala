@@ -46,7 +46,7 @@ class StoreSpaceManager(baseDir: Path) extends AutoCloseable {
         _          <- Try(storeSpaces.update(name, storeSpace))
       } yield storeSpace
 
-  def getAllName: Try[Iterator[String]] = Try(storeSpaces.view.keys.iterator)
+  def getAllNames: Try[Iterator[String]] = Try(storeSpaces.view.keys.iterator)
 
   override def close(): Unit = for (storeSpace <- storeSpaces.values) storeSpace.close()
 }
