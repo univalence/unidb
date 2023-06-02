@@ -1,7 +1,9 @@
 package io.univalence.unidb.job
 
-import io.univalence.unidb.wrapper.ZLineReader
 import org.jline.terminal.Terminal
+
+import io.univalence.unidb.wrapper.ZLineReader
+
 import zio.*
 
 object UniDBConsole {

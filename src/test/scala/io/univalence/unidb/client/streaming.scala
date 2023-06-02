@@ -118,15 +118,21 @@ class Consumer(host: String, port: Int, group: String) extends AutoCloseable {
       consumerOffsets: Map[TopicPartition, Int] <-
         consumerTable
           .getPrefix(s"$group-$topic")
-          .map(_.toList.map { r =>
-            val partition = r.value.obj("partition").num.toInt
-            val offset    = r.value.obj("offset").num.toInt
-            TopicPartition(topic, partition) -> offset
-          }.toMap)
+          .map(
+            _.toList
+              .map { r =>
+                val partition = r.value.obj("partition").num.toInt
+                val offset    = r.value.obj("offset").num.toInt
+                TopicPartition(topic, partition) -> offset
+              }
+              .toMap
+          )
 
       partitionTables <-
         partitionNames
-          .map(tp => rdb.getStore(s"${tp.topic}-${tp.partition}").map(tp -> _)).toList.sequence
+          .map(tp => rdb.getStore(s"${tp.topic}-${tp.partition}").map(tp -> _))
+          .toList
+          .sequence
 
       result: List[ConsumerRecord] <-
         partitionTables

@@ -11,7 +11,7 @@ object tryext {
         case (Failure(e), _)          => Failure(e)
         case (_, Failure(e))          => Failure(e)
       }
-      
+
   extension [A](lt: Iterator[Try[A]])
     def sequence: Try[List[A]] =
       lt.foldLeft(Try(List.empty[A])) {

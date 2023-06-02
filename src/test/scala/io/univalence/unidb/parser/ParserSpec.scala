@@ -4,7 +4,7 @@ import zio.test.*
 
 object ParserSpec extends ZIOSpecDefault {
   def spec =
-    suite("String Parser") (
+    suite("String Parser")(
       test("should parse string LIMIT ignoring case") {
         val result = Parser.stringConstantIgnoreCase("LIMIT").parse(Input("limit"))
         assertTrue(result == ParseResult.Success("LIMIT", Input("limit", 5)))
@@ -20,6 +20,6 @@ object ParserSpec extends ZIOSpecDefault {
       test("should skip spaces") {
         val result = Parser.skipSpaces.parse(Input("  "))
         assertTrue(result == ParseResult.Success((), Input("  ", 2)))
-      },
+      }
     )
 }

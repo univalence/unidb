@@ -87,7 +87,6 @@ class RemoteStoreSpace private[db] (name: String, socket: SocketChannel) extends
   override def close(): Unit = stores.clear()
 
   private[db] def send(request: String): Try[ujson.Value] =
-    println(s"sending: $request")
     for {
       byteWritten <- network.sendAll(request, socket)
       receivedData <-
