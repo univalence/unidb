@@ -289,7 +289,7 @@ object CommandParser {
         word
           .map(_.toUpperCase)
           .flatMap { optionName =>
-            if (optionName == ShowCommandName.STORESPACES.toString)
+            if (optionName == ShowCommandName.SPACES.toString)
               Parser(ShowCommand.StoreSpaces)
             else if (optionName == ShowCommandName.STORES.toString)
               for {

@@ -45,9 +45,15 @@ enum StoreSpaceCommand(val name: StoreSpaceCommandName) {
       case GetOrCreateStore(store)                        => s"${this.name} ${store.serialize}"
       case DropStore(store)                               => s"${this.name} ${store.serialize}"
 }
-enum ShowCommand {
-  case StoreSpaces
-  case Stores(storeSpace: String)
+enum ShowCommand(val name: ShowCommandName) {
+  case StoreSpaces extends ShowCommand(ShowCommandName.SPACES)
+  case Stores(storeSpace: String) extends ShowCommand(ShowCommandName.STORES)
+
+  def serialize: String =
+    this match {
+      case StoreSpaces        => s"SHOW ${this.name}"
+      case Stores(storeSpace) => s"SHOW ${this.name} $storeSpace"
+    }
 }
 enum CLICommand {
   case Quit
@@ -91,7 +97,7 @@ enum StoreSpaceCommandName {
 }
 
 enum ShowCommandName {
-  case STORESPACES
+  case SPACES
   case STORES
 }
 
