@@ -153,6 +153,9 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
 
         result *> ZIO.succeed(ujson.Null)
 
+      case StoreSpaceCommand.CloseStoreSpace(name) =>
+        StoreSpaceManagerService.closeStoreSpace(name) *> ZIO.succeed(ujson.Null)
+
       case ShowCommand.StoreSpaces =>
         for {
           result <- StoreSpaceManagerService.getAllSpaces
