@@ -1,9 +1,8 @@
-package io.univalence.unidb
+package io.univalence.unidb.job
 
-import io.univalence.unidb.db
+import io.univalence.unidb.*
 import io.univalence.unidb.db.{Store, StoreSpace, StoreSpaceManager}
 import io.univalence.unidb.wrapper.ZWrapped
-
 import zio.*
 
 import java.nio.file.Path

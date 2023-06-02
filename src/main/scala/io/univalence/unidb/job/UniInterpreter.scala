@@ -1,8 +1,7 @@
-package io.univalence.unidb
+package io.univalence.unidb.job
 
 import io.univalence.unidb.command.StoreType
 import io.univalence.unidb.db.{Record, StoreName}
-import io.univalence.unidb.job.RunningState
 
 import zio.*
 
@@ -178,8 +177,11 @@ object UniInterpreter {
 
     private def printRecords(records: List[Record]): Task[Unit] =
       val (maxkl, maxvl) =
-        records
-          .map(r => (r.key.length, r.value.toString.length))
+        (
+          records
+            .map(r => (r.key.length, r.value.toString.length))
+            :+ ("key".length, "value".length)
+        )
           .foldLeft((0, 0)) { case ((maxkl, maxvl), (kl, vl)) =>
             (Math.max(maxkl, kl), Math.max(maxvl, vl))
           }

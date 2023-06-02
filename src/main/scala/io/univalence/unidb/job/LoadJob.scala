@@ -1,6 +1,5 @@
 package io.univalence.unidb.job
 
-import io.univalence.unidb.StoreSpaceManagerService
 import io.univalence.unidb.arg.ApplicationOption
 import io.univalence.unidb.db.StoreName
 
