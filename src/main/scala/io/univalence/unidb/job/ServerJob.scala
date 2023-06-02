@@ -74,7 +74,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
             ujson.Obj(
               "key"       -> ujson.Str(record.key),
               "value"     -> record.value,
-              "timestamp" -> ujson.Num(record.timestamp)
+              "timestamp" -> ujson.Num(record.timestamp.toDouble)
             )
           )
         )
@@ -96,7 +96,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
             ujson.Obj(
               "key"       -> ujson.Str(record.key),
               "value"     -> record.value,
-              "timestamp" -> ujson.Num(record.timestamp)
+              "timestamp" -> ujson.Num(record.timestamp.toDouble)
             )
           )
         )
@@ -111,7 +111,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
             ujson.Obj(
               "key"       -> ujson.Str(record.key),
               "value"     -> record.value,
-              "timestamp" -> ujson.Num(record.timestamp)
+              "timestamp" -> ujson.Num(record.timestamp.toDouble)
             )
           )
         )

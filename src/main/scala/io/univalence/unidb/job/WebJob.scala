@@ -51,7 +51,7 @@ case class WebJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, Appl
                     ujson.Obj(
                       "key"       -> ujson.Str(r.key),
                       "value"     -> r.value,
-                      "timestamp" -> ujson.Num(r.timestamp)
+                      "timestamp" -> ujson.Num(r.timestamp.toDouble)
                     )
                   )
               )

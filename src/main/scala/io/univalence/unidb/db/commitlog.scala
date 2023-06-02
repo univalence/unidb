@@ -66,7 +66,7 @@ object CLRecord {
     ujson.Obj(
       "key"       -> ujson.Str(record.key),
       "value"     -> record.value,
-      "timestamp" -> ujson.Num(record.timestamp),
+      "timestamp" -> ujson.Num(record.timestamp.toDouble),
       "deleted"   -> ujson.Bool(record.deleted)
     )
 
