@@ -18,10 +18,9 @@ Toy and polyvalent key-value store management system.
 
 ### Roadmap
 
-* Make it work in cluster (consensus management)
+* Make it works in cluster (consensus management)
 * Include TTL
 * Load data from JSON
-* Dump
 
 ## Install
 
@@ -38,7 +37,7 @@ In the UniDB root directory, to run the CLI client.
 
 ```shell
 $ ./bin/unidb cli
-> open myspace persistent
+> open myspace
 > put myspace.mytable abc {"id":"abc","name":"jon","age":32}
 > get myspace.mytable abc
 abc -> {"id":"abc","name":"jon","age":32}
@@ -60,6 +59,7 @@ $ ./bin/unidb cli
 > put myspace.mytable abc {"id":"abc","name":"jon","age":32}
 > get myspace.mytable abc
 abc -> {"id":"abc","name":"jon","age":32}
+> close myspace
 ```
 
 ### Bulk load
@@ -75,6 +75,12 @@ a whole record.
 
 The default key delimiter used is "#".
 
+### Dump
+
+```shell
+$ ./bin/unidb load --from myspace.mytable
+```
+
 ### WEB mode
 
 To run UniDB in WEB server mode (experimental).
@@ -82,6 +88,8 @@ To run UniDB in WEB server mode (experimental).
 ```shell
 $ ./bin/unidb web
 ```
+
+The WEB API is available on port 18040.
 
 ## Store
 
@@ -107,8 +115,11 @@ A store space is a context in which you manage a set of stores on the
 same support (in-memory, persistent, or remote).
 
 Operations:
-* `OPEN <store-space> [INMEMORY | PRESISTENT | REMOTE <host>]`
+* `OPEN <store-space> [INMEMORY | PRESISTENT (default) | REMOTE &lt;host:port>]`
+* `CLOSE <store-space>`
 * `CREATESTORE <store>`
 * `GETSTORE <store>`
 * `GETORCREATESTORE <store>`
 * `DROPSTORE <store>`
+* `SHOW SPACES`
+* `SHOW STORES <store-space>`
