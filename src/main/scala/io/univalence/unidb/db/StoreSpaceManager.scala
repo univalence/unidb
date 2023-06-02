@@ -7,7 +7,7 @@ import java.net.{ConnectException, InetSocketAddress}
 import java.nio.channels.{SocketChannel, UnresolvedAddressException}
 import java.nio.file.Path
 
-class StoreSpaceManager(baseDir: Path) extends AutoCloseable {
+class StoreSpaceManager(baseDir: Path) {
   val storeSpaces: mutable.Map[String, StoreSpace]             = mutable.Map.empty
   val sockets: mutable.Map[(String, Int), SocketChannel]       = mutable.Map.empty
   val remotes: mutable.Map[(String, Int), mutable.Set[String]] = mutable.Map.empty
@@ -77,7 +77,7 @@ class StoreSpaceManager(baseDir: Path) extends AutoCloseable {
 
   def getAllSpaces: Try[Iterator[String]] = Try(storeSpaces.view.keys.iterator)
 
-  def close(name: String): Try[Unit] =
+  def closeStoreSpace(name: String): Try[Unit] =
     for {
       storeSpace <- Try(storeSpaces(name))
       _          <- Try(storeSpace.close())
@@ -116,7 +116,14 @@ class StoreSpaceManager(baseDir: Path) extends AutoCloseable {
         }
     } yield ()
 
-  override def close(): Unit =
+  def close(): Unit =
+    for (socket <- sockets.view.values) {
+      sendClose(socket).get
+      socket.close()
+    }
     for (storeSpace <- storeSpaces.values) storeSpace.close()
+    sockets.clear()
+    remotes.clear()
+    connections.clear()
     storeSpaces.clear()
 }

@@ -1,6 +1,7 @@
 package io.univalence.unidb.job
 
 import ujson.Value
+
 import io.univalence.unidb.arg.ApplicationOption
 import io.univalence.unidb.command.*
 import io.univalence.unidb.db.network
@@ -192,8 +193,13 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
         def answer(request: String): RIO[StoreSpaceManagerService, Unit] =
           for {
             response <- serve(request)
-            _        <- Console.printLine(s"sending response: ${response.toString.take(100)}")
-            _        <- ZIO.fromTry(network.sendAll(response.toString, client))
+            _ <- {
+              if (response.toString.length > 100)
+                Console.printLine(s"sending response: ${response.toString.take(100)}...")
+              else
+                Console.printLine(s"sending response: ${response.toString}")
+            }
+            _ <- ZIO.fromTry(network.sendAll(response.toString, client))
           } yield ()
 
         for {

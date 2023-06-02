@@ -26,6 +26,8 @@ object UniInterpreter {
     def closeStoreSpace(name: String): Task[RunningState]
     def showStoreSpaces(): Task[RunningState]
     def showStores(storeSpace: String): Task[RunningState]
+
+    def close(): Task[Unit]
   }
 
   object Interpreter {
@@ -74,6 +76,8 @@ object UniInterpreter {
 
     def showStores(storeSpace: String): ZIO[Interpreter, Throwable, RunningState] =
       ZIO.serviceWithZIO[Interpreter](_.showStores(storeSpace))
+
+    def close(): ZIO[Interpreter, Throwable, Unit] = ZIO.serviceWithZIO[Interpreter](_.close())
   }
 
   class InterpreterLive(manager: StoreSpaceManagerService, console: UniDBConsole.Console) extends Interpreter {
@@ -160,7 +164,8 @@ object UniInterpreter {
 
       result *> RunningState.ContinueM
 
-    override def closeStoreSpace(name: String): Task[RunningState] = manager.close(name) *> RunningState.ContinueM
+    override def closeStoreSpace(name: String): Task[RunningState] =
+      manager.closeStoreSpace(name) *> RunningState.ContinueM
 
     override def showStoreSpaces(): Task[RunningState] =
       for {
@@ -205,6 +210,8 @@ object UniInterpreter {
           else s"${records.size} records"
         _ <- console.response(AnsiColor.BOLD + recordCount + AnsiColor.RESET)
       } yield ()
+
+    override def close(): Task[Unit] = manager.close()
 
   }
 

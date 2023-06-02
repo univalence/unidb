@@ -3,6 +3,7 @@ package io.univalence.unidb.job
 import io.univalence.unidb.*
 import io.univalence.unidb.db.{Store, StoreSpace, StoreSpaceManager}
 import io.univalence.unidb.wrapper.ZWrapped
+
 import zio.*
 
 import java.nio.file.Path
@@ -13,7 +14,8 @@ trait StoreSpaceManagerService {
   def getOrCreatePersistent(name: String): Task[ZStoreSpace]
   def getOrOpenRemote(name: String, host: String, port: Int): Task[ZStoreSpace]
   def getAllSpaces: Task[Iterator[String]]
-  def close(name: String): Task[Unit]
+  def closeStoreSpace(name: String): Task[Unit]
+  def close(): Task[Unit]
 }
 object StoreSpaceManagerService {
   def getPersistent(name: String): RIO[StoreSpaceManagerService, ZStoreSpace] =
@@ -26,15 +28,16 @@ object StoreSpaceManagerService {
     ZIO.serviceWithZIO[StoreSpaceManagerService](_.getOrOpenRemote(name, host, port))
   def getAllSpaces: RIO[StoreSpaceManagerService, Iterator[String]] =
     ZIO.serviceWithZIO[StoreSpaceManagerService](_.getAllSpaces)
-  def close(name: String): RIO[StoreSpaceManagerService, Unit] =
-    ZIO.serviceWithZIO[StoreSpaceManagerService](_.close(name))
+  def closeStoreSpace(name: String): RIO[StoreSpaceManagerService, Unit] =
+    ZIO.serviceWithZIO[StoreSpaceManagerService](_.closeStoreSpace(name))
+  def close(): RIO[StoreSpaceManagerService, Unit] = ZIO.serviceWithZIO[StoreSpaceManagerService](_.close())
 
   def layer(baseDir: Path): ZLayer[Any, Throwable, StoreSpaceManagerService] =
     ZLayer.scoped {
-      ZIO.fromAutoCloseable(ZIO.attempt(new StoreSpaceManagerServiceLive(baseDir)))
+      ZIO.acquireRelease(ZIO.attempt(new StoreSpaceManagerServiceLive(baseDir)))(_.close().orDie)
     }
 }
-class StoreSpaceManagerServiceLive(baseDir: Path) extends StoreSpaceManagerService with AutoCloseable {
+class StoreSpaceManagerServiceLive(baseDir: Path) extends StoreSpaceManagerService {
   val manager = new StoreSpaceManager(baseDir)
 
   override def getPersistent(name: String): Task[ZStoreSpace] =
@@ -51,9 +54,9 @@ class StoreSpaceManagerServiceLive(baseDir: Path) extends StoreSpaceManagerServi
 
   override def getAllSpaces: Task[Iterator[String]] = ZIO.fromTry(manager.getAllSpaces)
 
-  override def close(name: String): Task[Unit] = ZIO.fromTry(manager.close(name))
+  override def closeStoreSpace(name: String): Task[Unit] = ZIO.fromTry(manager.closeStoreSpace(name))
 
-  override def close(): Unit = manager.close()
+  override def close(): Task[Unit] = ZIO.attempt(manager.close())
 }
 
 case class ZStoreSpace(storeSpace: StoreSpace) {
