@@ -76,7 +76,7 @@ case class CliJob(defaultStoreDir: Path) extends Job[UniDBConsole.Console, Appli
 
   val replStep: ZIO[UniInterpreter.Interpreter with UniDBConsole.Console, CommandIssue, RunningState] =
     for {
-      command        <- readCommand(">")
+      command        <- readCommand("unidb>")
       shouldContinue <- execute(command).mapError(e => CommandIssue.GenericError(e))
     } yield shouldContinue
 
