@@ -208,7 +208,7 @@ case class ServerJob(defaultStoreDir: Path, defaultPort: Int) extends Job[Any, A
                   *> Schedule.recurWhile[String](_.isEmpty)
               )
           _ <- Console.printLine(s"received data: $data")
-          shouldCloseConnection = data.trim.toUpperCase == "CLOSE"
+          shouldCloseConnection = data.trim.toUpperCase == network.CloseConnectionMessage
           _ <- answer(data).when(!shouldCloseConnection && data.nonEmpty)
         } yield shouldCloseConnection
 

@@ -10,6 +10,8 @@ import java.nio.charset.StandardCharsets
 
 object network {
 
+  val CloseConnectionMessage = "CLOSE CONNECTION"
+  
   def sendAll(data: String, socket: SocketChannel): Try[Int] = {
     val writeBuffer = ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8))
     Try(socket.write(writeBuffer))
