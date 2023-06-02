@@ -60,7 +60,10 @@ class PersistentStoreSpace private[db] (name: String, storeSpaceDir: Path, store
 
   override def getAllStores: Try[Iterator[String]] = Try(stores.view.keys.iterator)
 
-  override def close(): Unit = ()
+  override def close(): Unit =
+    stores.foreach(store => store._2.close())
+    stores.clear()
+
 }
 
 object PersistentStoreSpace {
@@ -92,7 +95,9 @@ object PersistentStoreSpace {
       }
 }
 
-class PersistentStore private[db] (val name: String, val file: Path, storeSpace: PersistentStoreSpace) extends Store {
+class PersistentStore private[db] (val name: String, val file: Path, storeSpace: PersistentStoreSpace)
+    extends Store
+    with AutoCloseable {
   store =>
 
   val commitLog: CommitLog = new CommitLog(file)
@@ -148,5 +153,7 @@ class PersistentStore private[db] (val name: String, val file: Path, storeSpace:
     }
 
   override def scan(): Try[Iterator[Record]] = Try(data.iterator.map(_._2))
+
+  override def close(): Unit = data.clear()
 
 }
